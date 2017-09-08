@@ -37,10 +37,10 @@ rm -rf $instance_dir
 echo " "
 echo "Extrayendo restore files ... "
 cd $lastest
-tar -zxvf ${proyecto}.sugarondemand.com.7720ent.*.tar.gz
-cd ${proyecto}.sugarondemand.com.7720ent.*
-mv sugar7720ent $instance_dir
-mv sugar7720ent.sql $instance_dir
+tar -zxvf ${proyecto}.sugarondemand.com*.tar.gz
+cd ${proyecto}.sugarondemand.com.*
+mv sugar*ent $instance_dir
+mv sugar*ent.sql $instance_dir
 
 echo " "
 echo "Modificando archivo config.php ..."
