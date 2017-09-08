@@ -108,6 +108,8 @@ if [ $nameBranch != 'N' ]; then
     echo "Ejecutando las pruebas JS"
     #Checar como obtener la versión de sugar en Mac ver script linux
     vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc/tests; grunt karma:ci"
+    #Version 7.8 o superior
+    #vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc/node_modules/gulp/bin/gulp.js karma --ci"
   fi
 fi
 
