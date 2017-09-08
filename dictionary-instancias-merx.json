@@ -1,0 +1,13 @@
+{
+	"instancias-merx": {
+		"lowes": {
+			"esOndemand": "true",
+			"urlOnSite": "",
+			"db_host_name": "ondemandus11-dbc-1-db-1.cge3wj1tjwac.us-west-2.rds.amazonaws.com",
+			"db_user_name": "u_lowes",
+			"db_password": "secret",
+			"db_name": "db_lowes",
+			"host_elastic": "internal-ondemandus11-Internal-1394614045.us-west-2.elb.amazonaws.com"
+		}		
+	}
+}
