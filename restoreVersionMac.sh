@@ -10,20 +10,28 @@ clear
 primeraVez=$1
 proyecto=$2
 sugar_vagrant_dir=$3
-nameBranch=$4
-user_github=$5
-correrPruebas=$6
+dirBackup=$4
+nameBranch=$5
+user_github=$6
+correrPruebas=$7
 
-esOndemand=$7
-urlOnSite=$8
-db_host_name=$9
-db_user_name=${10}
-db_password=${11}
-db_name=${12}
-host_elastic=${13}
+esOndemand=$8
+urlOnSite=$9
+#preguntar y hacer pruebas con edicion pro y ultimate
+edicion=${10}
+db_host_name=${11}
+db_user_name=${12}
+db_password=${13}
+db_name=${14}
+host_elastic=${15}
 
 instance_dir=$sugar_vagrant_dir/$proyecto.merxbp.loc
-lastest="${PWD}/proyectos/$proyecto/backups/lastest"
+
+if [ "$dirBackup" == "N" ]; then
+  lastest="${PWD}/proyectos/$proyecto/backups/lastest"
+else
+  lastest=$dirBackup
+fi
 
 echo " "
 echo "Restaurando Instancia ${proyecto} en Local..."
@@ -37,10 +45,10 @@ rm -rf $instance_dir
 echo " "
 echo "Extrayendo restore files ... "
 cd $lastest
-tar -zxvf ${proyecto}.sugarondemand.com*.tar.gz
+tar -zxf *.tar.gz
 cd ${proyecto}.sugarondemand.com.*
-mv sugar*ent $instance_dir
-mv sugar*ent.sql $instance_dir
+mv *ent $instance_dir
+mv *ent.sql $instance_dir
 
 echo " "
 echo "Modificando archivo config.php ..."
@@ -62,7 +70,7 @@ echo " "
 echo "Modificando archivos .htaccess ..."
 vagrant ssh -c 'sed -i "s/RewriteBase \//RewriteBase \/sugar\/${proyecto}.merxbp.loc\//g" /vagrant/${proyecto}.merxbp.loc/.htaccess'
 echo " "
-echo "Restaurando base de datos ..."
+echo "Restaurando bases de datos ..."
 vagrant ssh -c "mysql -u root -proot -e 'drop database IF EXISTS ${proyecto}; create database ${proyecto}; show databases;'"
 vagrant ssh -c "mysql -u root -proot ${proyecto} < /vagrant/${proyecto}.merxbp.loc/*ent.sql"
 vagrant ssh -c "mysql -u root -proot ${proyecto} < /vagrant/${proyecto}.merxbp.loc/*ent_triggers.sql"

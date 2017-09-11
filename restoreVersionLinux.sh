@@ -25,23 +25,29 @@ clear
 primeraVez=$1
 proyecto=$2
 dirVagrant=$3
-nameBranch=$4
-userGit=$5
-correrPruebas=$6
+dirBackup=$4
+nameBranch=$5
+userGit=$6
+correrPruebas=$7
 
-esOndemand=$7
-urlOnSite=$8
-db_host_name=$9
-db_user_name=${10}
-db_password=${11}
-db_name=${12}
-host_elastic=${13}
+esOndemand=$8
+urlOnSite=$9
+#preguntar y hacer pruebas con edicion pro y ultimate
+edicion=${10}
+db_host_name=${11}
+db_user_name=${12}
+db_password=${13}
+db_name=${14}
+host_elastic=${15}
 
 echo " "
 echo "Restaurando Instancia ${proyecto} en Local..."
 echo " "
-
-homeProyBkUp="${PWD}/proyectos/$proyecto/backups/lastest"
+if [ "$dirBackup" == "N" ]; then
+	homeProyBkUp="${PWD}/proyectos/$proyecto/backups/lastest"
+else
+	homeProyBkUp=$dirBackup
+fi
 
 if [ -d $homeProyBkUp ]; then
 	echo " "
@@ -100,17 +106,24 @@ if [ -d $homeProyBkUp ]; then
 			rm -r */
 			#Vamos al directorio donde se corre vagrant
 			cd $dirVagrant
-			#recargamos o cargamos vagrant segun sea el caso
-			vagrant reload
+
 			#verificamos su status
 			responseVagrant="$(curl -I -s -L http://localhost:8080 | grep 'HTTP/1.1')"
 			responseVagrantV=$( echo ${responseVagrant: -8:-4} )
-			if [  $responseVagrantV == '404'  ]; then
+			if [  "$responseVagrantV" == '404'  ]; then
 				echo " "
-				echo "===>Ups! Algo no esta funcionando en Vagrant..."
+				echo "\e[33m===>Ups! Vagrant estaba dormido...\e[0m"
+				vagrant up
+			fi
+
+			responseVagrant="$(curl -I -s -L http://localhost:8080 | grep 'HTTP/1.1')"
+			responseVagrantV=$( echo ${responseVagrant: -8:-4} )
+			if [  "$responseVagrantV" == '404'  ]; then
+				echo " "
+				echo "\e[31m===>Ups! Algo no esta funcionando en Vagrant...\e[0m"
 			else
 				echo " "
-				echo "Estamos actualizando la Base de Datos dentro de Vagrant..."
+				echo "Estamos actualizando las Bases de Datos dentro de Vagrant..."
 				#Actualizar la Base de Datos en Vagrant
 				vagrant ssh -c "mysql -u root -proot -e 'drop database IF EXISTS ${proyecto}; create database ${proyecto}; show databases;'"
 				vagrant ssh -c "mysql -u root -proot ${proyecto} < /vagrant/${proyecto}.merxbp.loc/*ent.sql"
@@ -121,19 +134,24 @@ if [ -d $homeProyBkUp ]; then
 				vagrant ssh -c "mysql -u root -proot ${proyecto}_origin < /vagrant/${proyecto}.merxbp.loc/*ent.sql"
 				vagrant ssh -c "mysql -u root -proot ${proyecto}_origin < /vagrant/${proyecto}.merxbp.loc/*ent_triggers.sql"
 
-				if [ $nameBranch != 'N' ]; then
+				if [ "$nameBranch" != 'N' && "$correrPruebas" == "S" ]; then
 					echo " "
-					echo "Espera un poco más, estamos instalando cosas necesarias en tu instancia local como : composer y npm"
+					echo "Espera un poco más, estamos instalando cosas necesarias para desarrollo en tu instancia local como : composer y npm"
 					#Instalando cosas necesarias para desarrollo local
 					vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc; composer install"
 					vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc; npm install"
+				else
+					echo " "
+					echo -e "\e[31mRecuerda antes de correr tus pruebas, instala composer y npm con las siguientes lineas: \e[0m"
+					echo -e "\e[31mvagrant ssh -c 'cd /vagrant/${proyecto}.merxbp.loc; composer install'\e[0m"
+					echo -e "\e[31mvagrant ssh -c 'cd /vagrant/${proyecto}.merxbp.loc; npm install'\e[0m"
 				fi
 
 				echo " "
 				echo "Cambiando permisos en los archivos de la instancia"
 				vagrant ssh -c "chmod 755 -R /vagrant/${proyecto}.merxbp.loc"
 
-				if [ $nameBranch != 'N' ]; then
+				if [ "$nameBranch" != 'N' ]; then
 					#cambiamos a directorio de proyecto
 					cd $dirVagrant/$proyecto.merxbp.loc
 
@@ -160,13 +178,13 @@ if [ -d $homeProyBkUp ]; then
 					# git config --add --global core.filemode false
 					cd $dirVagrant
 					echo " "
-					echo "Reparando la instancia"
+					echo "Reparando la instancia..."
 					vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc; php repair.php"
 
-					if [ $correrPruebas != 'N' ]; then
+					if [ "$correrPruebas" != 'N' ]; then
 						echo " "
 						echo "Ejecutando las pruebas PHP"
-						vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc; ../vendor/phpunit/phpunit/phpunit"
+						vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc/tests; ../vendor/phpunit/phpunit/phpunit"
 						echo " "
 						echo "Ejecutando las pruebas JS"
 						gruntJS=7.7
@@ -176,11 +194,11 @@ if [ -d $homeProyBkUp ]; then
 						sv=$( printf "%.1f" $sugar_version )
 						r=$( echo "$sv <= $gruntJS" | bc )
 						if [ $r -eq 1 ]; then
-							echo ''
+							echo " "
 							echo 'Es la version 7.7 usaremos grunt'
 							vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc/tests; grunt karma:ci"
 						else
-							echo ''
+							echo " "
 							echo 'Es una version superior a la 7.7 usaremos gulp'
 							vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc/node_modules/gulp/bin/gulp.js karma --ci"
 						fi
@@ -189,7 +207,7 @@ if [ -d $homeProyBkUp ]; then
 			fi
 		else
 
-			if [ $primeraVez == 'S' ]; then
+			if [ "$primeraVez" == 'S' ]; then
 
 				#movemos la carpeta proyecto al directorio de vagrant y cambiamos nombre
 				mv -f $proyecto*/*ent $dirVagrant/$proyecto.merxbp.loc
@@ -208,12 +226,12 @@ if [ -d $homeProyBkUp ]; then
 
 				responseVagrant="$(curl -I -s -L http://localhost:8080 | grep 'HTTP/1.1')"
 				responseVagrantV=$( echo ${responseVagrant: -8:-4} )
-				if [  $responseVagrantV == '404'  ]; then
+				if [  "$responseVagrantV" == '404'  ]; then
 					echo " "
-					echo "===>Ups! Algo no esta funcionando en Vagrant..."
+					echo "\e[33m===>Ups! Algo no esta funcionando en Vagrant...\e[0m"
 				else
 					echo " "
-					echo "Estamos actualizando la Base de Datos dentro de Vagrant..."
+					echo "Estamos actualizando las Bases de Datos dentro de Vagrant..."
 					#Actualizar la Base de Datos en Vagrant
 					vagrant ssh -c "mysql -u root -proot -e 'drop database IF EXISTS ${proyecto}; create database ${proyecto}; show databases;'"
 					vagrant ssh -c "mysql -u root -proot ${proyecto} < /vagrant/${proyecto}.merxbp.loc/*ent.sql"
@@ -224,19 +242,24 @@ if [ -d $homeProyBkUp ]; then
 					vagrant ssh -c "mysql -u root -proot ${proyecto}_origin < /vagrant/${proyecto}.merxbp.loc/*ent.sql"
 					vagrant ssh -c "mysql -u root -proot ${proyecto}_origin < /vagrant/${proyecto}.merxbp.loc/*ent_triggers.sql"
 
-					if [ $nameBranch != 'N' ]; then
+					if [ "$nameBranch" != 'N' && "$correrPruebas" == "S" ]; then
 						echo " "
-						echo "Espera un poco más, estamos instalando cosas necesarias en tu instancia local como : composer y npm"
+						echo "Espera un poco más, estamos instalando cosas necesarias para desarrollo en tu instancia local como : composer y npm"
 						#Instalando cosas necesarias para desarrollo local
 						vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc; composer install"
 						vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc; npm install"
+					else
+						echo " "
+						echo -e "\e[31mRecuerda antes de correr tus pruebas, instala composer y npm con las siguientes lineas: \e[0m"
+						echo -e "\e[31mvagrant ssh -c 'cd /vagrant/${proyecto}.merxbp.loc; composer install'\e[0m"
+						echo -e "\e[31mvagrant ssh -c 'cd /vagrant/${proyecto}.merxbp.loc; npm install'\e[0m"
 					fi
 
 					echo " "
 					echo "Cambiando permisos en los archivos de la instancia"
 					vagrant ssh -c "chmod 755 -R /vagrant/${proyecto}.merxbp.loc"
 
-					if [ $nameBranch != 'N' ]; then
+					if [ "$nameBranch" != 'N' ]; then
 						#cambiamos a directorio de proyecto
 						cd $dirVagrant/$proyecto.merxbp.loc
 
@@ -261,16 +284,15 @@ if [ -d $homeProyBkUp ]; then
 
 						cd $dirVagrant
 						echo " "
-						echo "Reparando la instancia"
+						echo "Reparando la instancia..."
 						vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc; php repair.php"
 
-						if [ $correrPruebas != 'N' ]; then
+						if [ "$correrPruebas" != 'N' ]; then
 							echo " "
 							echo "Ejecutando las pruebas PHP"
-							vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc; ../vendor/phpunit/phpunit/phpunit"
+							vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc/tests; ../vendor/phpunit/phpunit/phpunit"
 							echo " "
 							echo "Ejecutando las pruebas JS"
-
 							gruntJS=7.7
 							$configFile = $dirVagrant/$proyecto.merxbp.loc/config.php
 							version=$( cat "$configFile" | grep "'sugar_version' => '7.7*" )
@@ -278,11 +300,11 @@ if [ -d $homeProyBkUp ]; then
 							sv=$( printf "%.1f" $sugar_version )
 							r=$( echo "$sv <= $gruntJS" | bc )
 							if [ $r -eq 1 ]; then
-								echo ''
+								echo " "
 								echo 'Es la version 7.7 usaremos grunt'
 								vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc/tests; grunt karma:ci"
 							else
-								echo ''
+								echo " "
 								echo 'Es una version superior a la 7.7 usaremos gulp'
 								vagrant ssh -c "cd /vagrant/${proyecto}.merxbp.loc/node_modules/gulp/bin/gulp.js karma --ci"
 							fi
