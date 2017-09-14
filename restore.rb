@@ -109,10 +109,11 @@ class RestoreInstanciaVagrant
         expO = expresionsOrigin[i]
         expR = expresionsReplace[i]
         content = text.gsub(/#{expO}$/, "#{expR}")
+      if @@os == "win" && i < 2      
         puts content
-      if @@os == "win" && i < 2
         File.open(filename, "w") { |file| file << content }
       elsif @os != "win"
+        puts content
         File.open(filename, "w") { |file| file << content }
       end
     end
