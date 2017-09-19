@@ -52,6 +52,10 @@
 		"dir_base":"C:\\merx\\vagrant\\sugar7-php56"
 	},
 	"github":{
-		"user": "jsanchezL"
+		"user": "jsanchezL",
+		"local":{
+			"dir":"",
+			"remote":""
+		}
 	}
 }
