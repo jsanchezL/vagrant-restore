@@ -9,7 +9,7 @@ require 'colorize'
 class RestoreInstanciaVagrant
   @@os = nil
   @@diccionario = "dictionary-instancias-merx.json"
-  @@gitMERX = "git@github.com:MerxBusinessPerformance/custom_sugarcrm.git"
+  @@gitMERX = nil
   @@primeraVez = nil
   @@data_hash = nil
   @@nombreInstancia = nil
@@ -105,10 +105,10 @@ class RestoreInstanciaVagrant
     filename = "Vagrantfile"
 
     expresionsOrigin.each_index do |i|
-        text = File.read(filename)
-        expO = expresionsOrigin[i]
-        expR = expresionsReplace[i]
-        content = text.gsub(/#{expO}$/, "#{expR}")
+      text = File.read(filename)
+      expO = expresionsOrigin[i]
+      expR = expresionsReplace[i]
+      content = text.gsub(/#{expO}$/, "#{expR}")
       if @@os == "win" && i < 2
         # puts content
         File.open(filename, "w") { |file| file << content }
@@ -305,7 +305,7 @@ class RestoreInstanciaVagrant
     if @@paramsInstancia['esOndemand']
       system("vagrant ssh -c 'sed -i \"s/#{@@nombreInstancia}.sugarondemand.com/#{@@nombreInstancia}.merxbp.loc/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
       system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}*/*#{@@paramsInstancia['edicion']}.sql'")
-  		system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}*/*triggers.sql'")
+      system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}*/*triggers.sql'")
     else
       system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['urlOnSite']}/#{@@nombreInstancia}.merxbp.loc/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
       system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}*/*.sql'")
@@ -383,15 +383,42 @@ class RestoreInstanciaVagrant
 
   end
 
+  # Checar el comportamiento de esta modificacion
+
+  def gitLocalDirFromRemote
+    @@gitMERX = @@data_hash['github']['local']['remote']
+    dirRepoMerx = @@gitMERX.split('/').last
+    dirRepoMerx = dirRepoMerx.split('.').first
+    gitLocal = File.join(@@data_hash['github']['local']['dir'],dirRepoMerx)
+
+    if existe_directorio?(gitLocal)
+      puts " "
+      puts "==> Actualizando repositorio local de MerxBP..."
+      Dir.chdir(gitLocal)
+      system("git fetch origin #{@@paramsInstancia['branch']}")
+    else
+      puts " "
+      puts "==> Creando repositorio local de MerxBP..."
+      Dir.chdir(@@data_hash['github']['local']['dir'])
+      system("git clone #{@@gitMERX}")
+    end
+    return gitLocal
+  end
+
   def obtenerCambiosDeGit
-    Dir.chdir(@@dir_instancia)
     puts " "
     puts "==> Obteniendo cambios de Git...".green
+    gitLocal = gitLocalDirFromRemote
+
+    Dir.chdir(@@dir_instancia)
+
     if @@os != "win"
       system("touch .gitignore")
     else
       system("copy NUL .gitignore")
+      gitLocal = gitLocal.gsub(%r{/}) {'\\'}
     end
+
     system("git init")
     system("git add .gitignore")
     system("git commit -m \"Primer commit\"")
@@ -400,13 +427,17 @@ class RestoreInstanciaVagrant
     else
       system("echo * > .gitignore")
     end
+
     system("git add .gitignore")
     system("git commit -m \"Omitiendo archivos\"")
+    system("git remote add local #{gitLocal}")
     system("git remote add merx \"#{@@gitMERX}\"")
-    system("git remote add origin \"git@github.com:#{@@data_hash["github"]["user"]}/custom_sugarcrm.git\"")
-    system("git fetch merx")
-    system("git fetch origin")
-    system("git checkout -b #{@@paramsInstancia['branch']} merx/#{@@paramsInstancia['branch']}")
+    # system("git remote add origin \"git@github.com:#{@@data_hash["github"]["user"]}/custom_sugarcrm.git\"")
+    # system("git fetch merx")
+    system("git fetch local #{@@paramsInstancia['branch']}")
+    # system("git fetch origin")
+    # system("git checkout -b #{@@paramsInstancia['branch']} merx/#{@@paramsInstancia['branch']}")
+    system("git checkout -b #{@@paramsInstancia['branch']} local/#{@@paramsInstancia['branch']}")
   end
 
   def repararInstancia
@@ -464,7 +495,7 @@ class RestoreInstanciaVagrant
     seleccion = gets.chomp.to_i
     seleccion = seleccion-1
     if seleccion == (backups.length-1)
-        return File.split(backups[seleccion]).last
+      return File.split(backups[seleccion]).last
     else
       while seleccion < 0 || seleccion > (backups.length-1)
         puts "Selección?".yellow
