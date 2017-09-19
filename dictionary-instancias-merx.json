@@ -1,61 +1,28 @@
 {
 	"instancias-merx": {
-		"lowes": {
-			"esOndemand": "true",
+		"nombreInstancia": {
+			"esOndemand": "",
 			"urlOnSite": "",
-      "edicion": "ent",
-			"db_host_name": "ondemandus11-dbc-1-db-1.cge3wj1tjwac.us-west-2.rds.amazonaws.com",
-			"db_user_name": "u_lowes",
-			"db_password": "secret",
-			"db_name": "db_lowes",
-			"host_elastic": "internal-ondemandus11-Internal-1394614045.us-west-2.elb.amazonaws.com",
-      "db_scripts":[
-				"DELETE FROM accounts;DELETE FROM accounts_cstm;DELETE FROM lowes_pagos;DELETE FROM lowes_pagos_cstm;DELETE FROM lf_facturas;DELETE FROM lf_facturas_cstm;DELETE FROM nc_notas_credito;DELETE FROM nc_notas_credito_cstm;DELETE FROM orden_ordenes;DELETE FROM orden_ordenes_cstm;DELETE FROM gpe_grupo_empresas;DELETE FROM gpe_grupo_empresas_cstm;DELETE FROM lowae_autorizacion_especial;DELETE FROM lowae_autorizacion_especial_cstm;DELETE FROM nc_notas_credito;DELETE FROM nc_notas_credito_cstm;DELETE FROM lowae_autorizacion_especial;DELETE FROM lowae_autorizacion_especial_cstm;DELETE FROM gpe_grupo_empresas;DELETE FROM leads;",
-        "UPDATE users SET user_hash = 'b2805e7bb0a5c52ccaeac9892387e961';",
-        "ALTER TABLE lowes_pagos MODIFY COLUMN num_folio_c int(11) auto_increment NOT NULL, ADD KEY(num_folio_c);",
-        "UPDATE users SET deleted = 1 WHERE deleted = 0 AND is_admin = 0;"
-			],
-			"dir_backup": "C:\\Users\\dir_1\\Documents\\Proyectos\\Lowes\\backups\\lastest",
-			"branch": "lowes",
-			"version": "7720"
-		},
-		"lowestest": {
-			"esOndemand": "true",
-			"urlOnSite": "",
-      "edicion": "ent",
-			"db_host_name": "ondemandus07-dbc-1-db-1.cge3wj1tjwac.us-west-2.rds.amazonaws.com",
-			"db_user_name": "u_lowestest",
-			"db_password": "15485215A_589",
-			"db_name": "db_lowestest",
-			"host_elastic": "internal-ondemandus07-Internal-1078808326.us-west-2.elb.amazonaws.com",
-      "db_scripts":[],
+      "edicion": "",
+			"db_host_name": "",
+			"db_user_name": "",
+			"db_password": "",
+			"db_name": "",
+			"host_elastic": "",
+      "db_scripts": [],
 			"dir_backup": "",
-			"branch":"lowes",
-			"version":"7800"
-		},
-		"lowesqa": {
-			"esOndemand": "true",
-			"urlOnSite": "",
-      "edicion": "ent",
-			"db_host_name": "internal-ondemandus11-Internal-1394614045.us-west-2.elb.amazonaws.com",
-			"db_user_name": "u_lowesqa",
-			"db_password": "78954813P2_4Q_P7",
-			"db_name": "db_lowesqa",
-			"host_elastic": "Internal-ondemandus27-Internal-1078808326.us-west-2.elb.amazonaws.com",
-      "db_scripts":[],
-			"dir_backup": "/home/jsanchez/Documentos/merx/vagrant/sugar7-php56",
-			"branch":"lowes",
-			"version":"7910"
+			"branch": "",
+			"version": ""
 		}
 	},
   "vagrant":{
-		"dir_base":"C:\\merx\\vagrant\\sugar7-php56"
+		"dir_base": ""
 	},
 	"github":{
-		"user": "jsanchezL",
+		"user": "",
 		"local":{
-			"dir":"",
-			"remote":""
+			"dir": "",
+			"remote": ""
 		}
 	}
 }

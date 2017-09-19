@@ -393,12 +393,12 @@ class RestoreInstanciaVagrant
 
     if existe_directorio?(gitLocal)
       puts " "
-      puts "==> Actualizando repositorio local de MerxBP..."
+      puts "==> Actualizando repositorio local de MerxBP...".green
       Dir.chdir(gitLocal)
       system("git fetch origin #{@@paramsInstancia['branch']}")
     else
       puts " "
-      puts "==> Creando repositorio local de MerxBP..."
+      puts "==> Creando repositorio local de MerxBP...".green
       Dir.chdir(@@data_hash['github']['local']['dir'])
       system("git clone #{@@gitMERX}")
     end
