@@ -557,7 +557,7 @@ class RestoreInstanciaVagrant
     if !directorios.empty?
       directorios.each_index do |d|
         if @@os == "win"
-          dir = directorios[d].gsub(%r{/}) {'\\'}
+          dir = directorios[d].gsub(%r{/}) {'\\'}          
           system("rmdir /S /Q #{dir}")
         else
           FileUtils.remove_dir(directorios[d],true)
@@ -640,13 +640,14 @@ class RestoreInstanciaVagrant
     puts "==> Eliminando repositorio Git...".green
     dirRepo = File.join(@@dir_instancia,'.git')
     if existe_directorio?(dirRepo)
-      limpiarDirectorio(dirRepo)
       if @@os == "win"
+        dirRepo = dirRepo.gsub(%r{\\}) {'/'}
         gitignore = File.join(@@dir_instancia,".gitignore").gsub(%r{/}) {'\\'}
         system("del /Q #{gitignore}")
       else
         File.delete(File.join(@@dir_instancia,".gitignore"))
       end
+      limpiarDirectorio(dirRepo)
     end
   end
 end
