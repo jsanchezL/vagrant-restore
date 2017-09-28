@@ -369,7 +369,12 @@ class RestoreInstanciaVagrant
         system("vagrant reload")
       end
     else
-      puts "proceso en Windows"
+      res = `ping 192.168.33.10`
+      if res.include? "agotado"
+        puts " "
+        puts "Iniciando vagrant...".green
+        system("vagrant reload")
+      end
     end
   end
 
