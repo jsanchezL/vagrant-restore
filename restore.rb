@@ -368,6 +368,8 @@ class RestoreInstanciaVagrant
         puts "Iniciando vagrant...".green
         system("vagrant reload")
       end
+    else
+      puts "proceso en Windows"
     end
   end
 
