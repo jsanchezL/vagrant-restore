@@ -634,6 +634,7 @@ if ARGV.length != 0
     puts "Se esperaba al menos 2 parametros para iniciar el proceso".red
     puts ""
     error = true
+    primeraVez = ARGV[0].upcase.chomp
   elsif ARGV.length == 2
     arg0 = ARGV[0].upcase.chomp
     if arg0 != "N" && arg0 != "S"
