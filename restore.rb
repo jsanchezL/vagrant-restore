@@ -557,7 +557,7 @@ class RestoreInstanciaVagrant
     if !directorios.empty?
       directorios.each_index do |d|
         if @@os == "win"
-          dir = directorios[d].gsub(%r{/}) {'\\'}          
+          dir = directorios[d].gsub(%r{/}) {'\\'}
           system("rmdir /S /Q #{dir}")
         else
           FileUtils.remove_dir(directorios[d],true)
@@ -688,12 +688,10 @@ if ARGV.length != 0
     correrPruebas = 'S'
   elsif ARGV.length == 3
     arg0 = ARGV[0].upcase.chomp
-    if arg0 != "S" && arg0 != "N"
-      puts ""
-      puts ""
+    if arg0 != "N" && arg0 != "S"
       puts "Se esperaba que el primer parámetro fuera N o S".red
       puts ""
-      exit(true)
+      error = true
     end
     arg2 = ARGV[2].upcase.chomp
     if arg2 == "T" || arg2 == "G" ||  arg2 == "B"
@@ -717,7 +715,7 @@ if ARGV.length != 0
     end
   elsif ARGV.length == 4
     arg0 = ARGV[0].upcase.chomp
-    if arg0 != "S" && arg0 != "N"
+    if arg0 != "N" && arg0 != "S"
       puts "Se esperaba que el primer parámetro fuera N o S".red
       puts ""
       error = true
@@ -729,7 +727,7 @@ if ARGV.length != 0
       error = true
     end
     arg3 = ARGV[3].upcase.chomp
-    if arg3 != "S" && arg3 != "N"
+    if arg3 != "N" && arg3 != "S"
       puts "Se esperaba que el cuarto parámetro fuera N o S".red
       puts ""
       error = true
@@ -738,7 +736,11 @@ if ARGV.length != 0
       respuestaGit = arg3
       correrPruebas = 'N'
     else
-      respuestaGit = 'N'
+      if arg2 == "G"
+        respuestaGit = 'S'
+      else
+        respuestaGit = 'N'
+      end
       correrPruebas = 'N'
     end
     primeraVez = arg0
@@ -746,7 +748,7 @@ if ARGV.length != 0
     tipoRestore = arg2
   elsif ARGV.length == 5
     arg0 = ARGV[0].upcase.chomp
-    if arg0 != "S" && arg0 != "N"
+    if arg0 != "N" && arg0 != "S"
       puts "Se esperaba que el primer parámetro fuera N o S".red
       puts ""
       error = true
@@ -758,7 +760,7 @@ if ARGV.length != 0
       error = true
     end
     arg3 = ARGV[3].upcase.chomp
-    if arg3 != "S" && arg3 != "N"
+    if arg3 != "N" && arg3 != "S"
       puts "Se esperaba que el cuarto parámetro fuera N o S".red
       puts ""
       error = true
@@ -772,7 +774,11 @@ if ARGV.length != 0
     primeraVez = arg0
     nombreInstancia = ARGV[1].chomp
     tipoRestore = arg2
-    respuestaGit = arg3
+    if arg2 == "G"
+      respuestaGit = 'S'
+    else
+      respuestaGit = arg3
+    end
     correrPruebas = arg4
   end
   if error
