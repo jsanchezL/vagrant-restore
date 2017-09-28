@@ -17,12 +17,12 @@ class RestoreInstanciaVagrant
   @@dir_instancia = nil
   @@dir_scriptrb = nil
 
-  def initialize(primeraVez, nombreInstancia, respuestaGit, correrPruebas)
+  def initialize(primeraVez, nombreInstancia, tipoRestore, respuestaGit, correrPruebas)
     os
     @@dir_scriptrb = Dir.pwd
     @@primeraVez = primeraVez
     leerDiccionario(nombreInstancia)
-    procesar(respuestaGit,correrPruebas)
+    procesar(tipoRestore,respuestaGit,correrPruebas)
   end
 
   #Carga el diccionario de datos y los parametros para ejecutar el script
@@ -44,25 +44,44 @@ class RestoreInstanciaVagrant
     leerDiccionario(nombreInstancia)
   end
 
-  def procesar(respuestaGit, correrPruebas)
+  def procesar(tipoRestore, respuestaGit, correrPruebas)
+    tiempoDeInicio = Time.new.to_i
     puts ""
     puts "==> Iniciando...".green
     if @@primeraVez != 'S'
-      eliminarInstanciaObsoleta
+      if tipoRestore == 'T'
+        eliminarInstanciaObsoleta
+      elsif tipoRestore == 'G'
+        eliminarRepoGit
+      elsif tipoRestore == 'B' && respuestaGit == 'S'
+        eliminarRepoGit
+      end
     else
       instalarVagrantBoxEnEquipo
       editarVagrantFile
       activarVagrant
     end
     Dir.chdir(@@dir_scriptrb)
-    rutaBackup = extraerInstanciaNueva
-    limpiarInstancia(rutaBackup)
-    copiarArchivosAVagrant(rutaBackup)
-    modificarConfig
-    restaurarBDs
-    ejecutarScripts
-    cambiarPermisos
-    if respuestaGit == 'S'
+    if tipoRestore == 'T' #Todo
+      rutaBackup = extraerInstanciaNueva
+      limpiarInstancia(rutaBackup)
+      copiarArchivosAVagrant(rutaBackup)
+      modificarConfig
+      restaurarBDs
+      ejecutarScripts
+      cambiarPermisos
+      if respuestaGit == 'S'
+        obtenerCambiosDeGit
+        if correrPruebas == 'S'
+          instalarComposerYnpm
+          repararInstancia
+          ejecutarPruebas
+        else
+          recordatorioDeInstalacionComposerYnpm
+          repararInstancia
+        end
+      end
+    elsif tipoRestore == 'G' #Sólo git
       obtenerCambiosDeGit
       if correrPruebas == 'S'
         instalarComposerYnpm
@@ -72,8 +91,28 @@ class RestoreInstanciaVagrant
         recordatorioDeInstalacionComposerYnpm
         repararInstancia
       end
+    elsif tipoRestore == 'B' #Base de datos
+      activarVagrant
+      restaurarBDs
+      ejecutarScripts
+      if respuestaGit == 'S'
+        obtenerCambiosDeGit
+        if correrPruebas == 'S'
+          instalarComposerYnpm
+          repararInstancia
+          ejecutarPruebas
+        else
+          recordatorioDeInstalacionComposerYnpm
+          repararInstancia
+        end
+      end
     end
+    tiempoDeFin = Time.new.to_i
+    tiempoDeProceso = ( tiempoDeFin - tiempoDeInicio ) / 60
+
     puts "==> Terminando...".green
+    puts " "
+    puts "==> Finalizado en #{tiempoDeProceso} mins.".green
   end
 
   def instalarVagrantBoxEnEquipo
@@ -322,7 +361,14 @@ class RestoreInstanciaVagrant
 
   def activarVagrant
     Dir.chdir(@@data_hash["vagrant"]['dir_base'])
-    system("vagrant reload")
+    if @@os != 'win'
+      res = `curl -I -s -L http://localhost:8080 | grep 'HTTP/1.1'`
+      if !res.include? "200"
+        puts " "
+        puts "Iniciando vagrant...".green
+        system("vagrant reload")
+      end
+    end
   end
 
   def restaurarBDs
@@ -396,6 +442,7 @@ class RestoreInstanciaVagrant
       puts "==> Actualizando repositorio local de MerxBP...".green
       Dir.chdir(gitLocal)
       system("git fetch origin #{@@paramsInstancia['branch']}")
+      system("git merge origin/#{@@paramsInstancia['branch']}")
     else
       puts " "
       puts "==> Creando repositorio local de MerxBP...".green
@@ -434,10 +481,12 @@ class RestoreInstanciaVagrant
     system("git remote add merx \"#{@@gitMERX}\"")
     system("git remote add origin \"git@github.com:#{@@data_hash["github"]["user"]}/custom_sugarcrm.git\"")
     # system("git fetch merx")
-    # system("git fetch local #{@@paramsInstancia['branch']}")
+    system("git fetch local #{@@paramsInstancia['branch']}")
     # system("git fetch origin")
     # system("git checkout -b #{@@paramsInstancia['branch']} merx/#{@@paramsInstancia['branch']}")
     system("git checkout -b #{@@paramsInstancia['branch']} local/#{@@paramsInstancia['branch']}")
+    # system("git clean -i")
+    # system("git pull local #{@@paramsInstancia['branch']} --allow-unrelated-histories")
   end
 
   def repararInstancia
@@ -542,7 +591,24 @@ class RestoreInstanciaVagrant
     end
   end
 
+  def eliminarRepoGit
+    @@dir_instancia = obtenerRutaInstancia
+    puts " "
+    puts "==> Eliminando repositorio Git...".green
+    dirRepo = File.join(@@dir_instancia,'.git')
+    if existe_directorio?(dirRepo)
+      limpiarDirectorio(dirRepo)
+      if @@os == "win"
+        gitignore = File.join(@@dir_instancia,".gitignore").gsub(%r{/}) {'\\'}
+        system("del /Q #{gitignore}")
+      else
+        File.delete(File.join(@@dir_instancia,".gitignore"))
+      end
+    end
+  end
 end
+
+
 
 system("clear")
 system("cls")
@@ -555,31 +621,179 @@ puts "|                                                  |".green
 puts "====================================================".green
 puts ""
 puts ""
-puts "¿Es la primera vez que instalas una instancia en este equipo?[s/n]".green
-primeraVez = gets.chomp.capitalize
-if primeraVez == '' || primeraVez != 'S'
-  primeraVez = 'N'
-end
-puts ""
-puts "¿Cuál es el nombre de la instancia? [Ejemplo: https://lowestest.sugarondemand.com -> Nombre de la instancia sería 'lowestest']".green
-nombreInstancia = gets.chomp
-while nombreInstancia.empty?
-  puts "Nombre de la instancia, por favor?".green
-  nombreInstancia = gets.chomp
-end
-puts ""
-puts "¿Necesitas ocupar repositorio Git?[s/n]".green
-respuestaGit = gets.chomp.capitalize
-if respuestaGit == '' || respuestaGit != 'S'
-  respuestaGit = 'N'
-  correrPruebas = 'N'
-elsif respuestaGit == 'S'
+error = false
+if ARGV.length != 0
+  if ARGV.length == 1
+    puts "Se esperaba al menos 2 parametros para iniciar el proceso".red
+    puts ""
+    error = true
+  elsif ARGV.length == 2
+    arg0 = ARGV[0].upcase.chomp
+    if arg0 != "N" && arg0 != "S"
+      puts "Se esperaba que el primer parametro fuera N o S".red
+      puts ""
+      error = true
+    end
+    primeraVez = arg0
+    nombreInstancia = ARGV[1].chomp
+    tipoRestore = 'T'
+    respuestaGit = 'S'
+    correrPruebas = 'S'
+  elsif ARGV.length == 3
+    arg0 = ARGV[0].upcase.chomp
+    if arg0 != "S" && arg0 != "N"
+      puts ""
+      puts ""
+      puts "Se esperaba que el primer parametro fuera N o S".red
+      puts ""
+      exit(true)
+    end
+    arg2 = ARGV[2].upcase.chomp
+    if arg2 == "T" || arg2 == "G" ||  arg2 == "B"
+      if arg2 == "T"
+        respuestaGit = 'S'
+        correrPruebas = 'S'
+      elsif arg2 == "B"
+        respuestaGit = 'N'
+        correrPruebas = 'N'
+      else
+        respuestaGit = 'S'
+        correrPruebas = 'N'
+      end
+      primeraVez = arg0
+      nombreInstancia = ARGV[1].chomp
+      tipoRestore = arg2
+    else
+      puts "Se esperaba que el tercer parametro fuera el tipo del restore: T[Todo], G[Git], B[Base de Datos]".red
+      puts ""
+      error = true
+    end
+  elsif ARGV.length == 4
+    arg0 = ARGV[0].upcase.chomp
+    if arg0 != "S" && arg0 != "N"
+      puts "Se esperaba que el primer parametro fuera N o S".red
+      puts ""
+      error = true
+    end
+    arg2 = ARGV[2].upcase.chomp
+    if !(arg2 == "T" || arg2 == "G" || arg2 == "B")
+      puts "Se esperaba que el tercer parametro fuera el tipo del restore: T[Todo], G[Git], B[Base de Datos]".red
+      puts ""
+      error = true
+    end
+    arg3 = ARGV[3].upcase.chomp
+    if arg3 != "S" && arg3 != "N"
+      puts "Se esperaba que el cuarto parametro fuera N o S".red
+      puts ""
+      error = true
+    end
+    if arg3 == "S"
+      respuestaGit = arg3
+      correrPruebas = 'N'
+    else
+      respuestaGit = 'N'
+      correrPruebas = 'N'
+    end
+    primeraVez = arg0
+    nombreInstancia = ARGV[1].chomp
+    tipoRestore = arg2
+  elsif ARGV.length == 5
+    arg0 = ARGV[0].upcase.chomp
+    if arg0 != "S" && arg0 != "N"
+      puts "Se esperaba que el primer parametro fuera N o S".red
+      puts ""
+      error = true
+    end
+    arg2 = ARGV[2].upcase.chomp
+    if !(arg2 == "T" || arg2 == "G" || arg2 == "B")
+      puts "Se esperaba que el tercer parametro fuera el tipo del restore: T[Todo], G[Git], B[Base de Datos]".red
+      puts ""
+      error = true
+    end
+    arg3 = ARGV[3].upcase.chomp
+    if arg3 != "S" && arg3 != "N"
+      puts "Se esperaba que el cuarto parametro fuera N o S".red
+      puts ""
+      error = true
+    end
+    arg4 = ARGV[4].upcase.chomp
+    if arg4 != "S" && arg4 != "N"
+      puts "Se esperaba que el quinto parametro fuera N o S".red
+      puts ""
+      error = true
+    end
+    primeraVez = arg0
+    nombreInstancia = ARGV[1].chomp
+    tipoRestore = arg2
+    respuestaGit = arg3
+    correrPruebas = arg4
+  end
+  if error
+    puts ""
+    puts "Parametros recibidos:  #{primeraVez} #{nombreInstancia} #{tipoRestore} #{respuestaGit} #{correrPruebas}".blue
+    puts ""
+    puts "Corrige e intenta nuevamente...".green
+    puts ""
+    exit(error)
+  end
+else
   puts ""
-  puts "Después de completar la instalación, ¿requieres correr las pruebas?[s/n]".green
-  correrPruebas = gets.chomp.capitalize
-  if correrPruebas == '' || correrPruebas != 'S'
-    correrPruebas = 'N'
+  puts ""
+  puts "¿Es la primera vez que instalas una instancia en este equipo?[s/n]".green
+  primeraVez = gets.chomp.capitalize
+  if primeraVez == '' || primeraVez != 'S'
+    primeraVez = 'N'
+  end
+  puts ""
+  puts "¿Cuál es el nombre de la instancia? [Ejemplo: https://lowestest.sugarondemand.com -> Nombre de la instancia sería 'lowestest']".green
+  nombreInstancia = gets.chomp
+  while nombreInstancia.empty?
+    puts "Nombre de la instancia, por favor?".green
+    nombreInstancia = gets.chomp
+  end
+
+  if primeraVez == 'N'
+    puts ""
+    puts "¿Qué tipo de restauración necesitas? [ T : \"Todo\", G : \"Git\", B : \"Base de Datos\" ]".green
+    tipoRestore = gets.chomp.capitalize
+    if tipoRestore == ''
+      tipoRestore = 'T'
+    end
+
+    if tipoRestore == "B"
+      puts ""
+      puts "¿Necesitas ocupar repositorio Git?[s/n]".green
+      respuestaGit = gets.chomp.capitalize
+
+      if respuestaGit == '' || respuestaGit != 'S'
+        respuestaGit = 'N'
+        correrPruebas = 'N'
+      elsif respuestaGit == 'S'
+        puts ""
+        puts "Después de completar el restore, ¿requieres correr las pruebas?[s/n]".green
+        correrPruebas = gets.chomp.capitalize
+        if correrPruebas == '' || correrPruebas != 'S'
+          correrPruebas = 'N'
+        end
+      end
+    elsif tipoRestore == 'G' || tipoRestore == 'T'
+      respuestaGit = 'S'
+      puts ""
+      puts "Después de completar el restore, ¿requieres correr las pruebas?[s/n]".green
+      correrPruebas = gets.chomp.capitalize
+      if correrPruebas == '' || correrPruebas != 'S'
+        correrPruebas = 'N'
+      end
+    end
+  else
+    tipoRestore = 'T'
+    respuestaGit = 'S'
+    puts ""
+    puts "Después de completar el restore, ¿requieres correr las pruebas?[s/n]".green
+    correrPruebas = gets.chomp.capitalize
+    if correrPruebas == '' || correrPruebas != 'S'
+      correrPruebas = 'N'
+    end
   end
 end
-
-restore = RestoreInstanciaVagrant.new(primeraVez, nombreInstancia, respuestaGit, correrPruebas)
+restore = RestoreInstanciaVagrant.new(primeraVez, nombreInstancia, tipoRestore, respuestaGit, correrPruebas)
