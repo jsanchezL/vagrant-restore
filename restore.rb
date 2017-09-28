@@ -16,16 +16,18 @@ class RestoreInstanciaVagrant
   @@paramsInstancia = nil
   @@dir_instancia = nil
   @@dir_scriptrb = nil
+  @@origenParams = nil
 
-  def initialize(primeraVez, nombreInstancia, tipoRestore, respuestaGit, correrPruebas)
+  def initialize(origenParams, primeraVez, nombreInstancia, tipoRestore, respuestaGit, correrPruebas)
     os
     @@dir_scriptrb = Dir.pwd
+    @@origenParams = origenParams
     @@primeraVez = primeraVez
     leerDiccionario(nombreInstancia)
     procesar(tipoRestore,respuestaGit,correrPruebas)
   end
 
-  #Carga el diccionario de datos y los parametros para ejecutar el script
+  #Carga el diccionario de datos y los parámetros para ejecutar el script
   def leerDiccionario(nombreInstancia)
     file = File.read(@@diccionario)
     @@data_hash = JSON.parse(file)
@@ -39,9 +41,17 @@ class RestoreInstanciaVagrant
   end
 
   def ingresarNombreDeLaInstanciaNuevamente
-    puts "====> ¡No existe instancia con ese nombre! - Revisa tus datos e ingresa de nuevo el nombre de la instancia a restaurar:".red
-    nombreInstancia = gets.chomp
-    leerDiccionario(nombreInstancia)
+    if !@@origenParams
+      puts "====> ¡No existe instancia con ese nombre! - Revisa tus datos e ingresa de nuevo el nombre de la instancia a restaurar:".red
+      nombreInstancia = gets.chomp
+      leerDiccionario(nombreInstancia)
+    else
+      puts "====> ¡No existe instancia con ese nombre! - Revisa tus datos e ingresa de nuevo el nombre correcto de la instancia a restaurar".red
+      puts ""
+      puts "Corrige e intenta nuevamente...".green
+      puts ""
+      exit(true)
+    end
   end
 
   def procesar(tipoRestore, respuestaGit, correrPruebas)
@@ -182,8 +192,17 @@ class RestoreInstanciaVagrant
       Dir.chdir(rutaBackup)
 
       if !esElUltimoBackup(rutaBackup)
-        puts "====> ¡Se detecto que tienes más de un backup en ese directorio! - Por favor selecciona el más reciente:".yellow
-        nombreBackup = seleccionarBackup(rutaBackup)
+        if !@@origenParams
+          puts "====> ¡Se detecto que tienes más de un backup en ese directorio! - Por favor selecciona el más reciente:".yellow
+          nombreBackup = seleccionarBackup(rutaBackup)
+        else
+          puts ""
+          puts "====> ¡Se detecto que tienes más de un backup en ese directorio! - Por favor elimina los antiguos y deja el más reciente".red
+          puts ""
+          puts "Corrige e intenta nuevamente...".green
+          puts ""
+          exit(true)
+        end
       else
         nombreBackup = "*.tar.gz"
       end
@@ -208,7 +227,24 @@ class RestoreInstanciaVagrant
 
       return rutaBackup
     else
-      ingresarRutaDelBackupManualmente
+      if !@@origenParams
+        ingresarRutaDelBackupManualmente
+      else
+          puts ""
+          puts "====> ¡No se encontró ruta del Backup!".red
+          puts ""
+          puts "====> Revisa la llave \"dir_backup\" del diccionario de datos y verifica manualmente que exista el directorio,".red
+          puts "====> en caso de que \"dir_backup\" este vacío, por favor comprueba que exista la siguiente ruta:".red
+          rutaBackup = Dir.pwd + "/proyectos/" + @@nombreInstancia + "/backups/lastest"
+          puts ""
+          puts "#{rutaBackup}".red
+          puts ""
+          puts "Si no existe la ruta, crear y copiar el archivo del último backup ahí".red
+          puts ""
+          puts "Intenta nuevamente...".green
+          puts ""
+          exit(true)
+      end
     end
   end
 
@@ -616,6 +652,8 @@ class RestoreInstanciaVagrant
 end
 
 
+error = false
+origenParams = false
 
 system("clear")
 system("cls")
@@ -628,17 +666,17 @@ puts "|                                                  |".green
 puts "====================================================".green
 puts ""
 puts ""
-error = false
+
 if ARGV.length != 0
   if ARGV.length == 1
-    puts "Se esperaba al menos 2 parametros para iniciar el proceso".red
+    puts "Se esperaba al menos 2 parámetros para iniciar el proceso".red
     puts ""
     error = true
     primeraVez = ARGV[0].upcase.chomp
   elsif ARGV.length == 2
     arg0 = ARGV[0].upcase.chomp
     if arg0 != "N" && arg0 != "S"
-      puts "Se esperaba que el primer parametro fuera N o S".red
+      puts "Se esperaba que el primer parámetro fuera N o S".red
       puts ""
       error = true
     end
@@ -652,7 +690,7 @@ if ARGV.length != 0
     if arg0 != "S" && arg0 != "N"
       puts ""
       puts ""
-      puts "Se esperaba que el primer parametro fuera N o S".red
+      puts "Se esperaba que el primer parámetro fuera N o S".red
       puts ""
       exit(true)
     end
@@ -672,26 +710,26 @@ if ARGV.length != 0
       nombreInstancia = ARGV[1].chomp
       tipoRestore = arg2
     else
-      puts "Se esperaba que el tercer parametro fuera el tipo del restore: T[Todo], G[Git], B[Base de Datos]".red
+      puts "Se esperaba que el tercer parámetro fuera el tipo del restore: T[Todo], G[Git], B[Base de Datos]".red
       puts ""
       error = true
     end
   elsif ARGV.length == 4
     arg0 = ARGV[0].upcase.chomp
     if arg0 != "S" && arg0 != "N"
-      puts "Se esperaba que el primer parametro fuera N o S".red
+      puts "Se esperaba que el primer parámetro fuera N o S".red
       puts ""
       error = true
     end
     arg2 = ARGV[2].upcase.chomp
     if !(arg2 == "T" || arg2 == "G" || arg2 == "B")
-      puts "Se esperaba que el tercer parametro fuera el tipo del restore: T[Todo], G[Git], B[Base de Datos]".red
+      puts "Se esperaba que el tercer parámetro fuera el tipo del restore: T[Todo], G[Git], B[Base de Datos]".red
       puts ""
       error = true
     end
     arg3 = ARGV[3].upcase.chomp
     if arg3 != "S" && arg3 != "N"
-      puts "Se esperaba que el cuarto parametro fuera N o S".red
+      puts "Se esperaba que el cuarto parámetro fuera N o S".red
       puts ""
       error = true
     end
@@ -708,25 +746,25 @@ if ARGV.length != 0
   elsif ARGV.length == 5
     arg0 = ARGV[0].upcase.chomp
     if arg0 != "S" && arg0 != "N"
-      puts "Se esperaba que el primer parametro fuera N o S".red
+      puts "Se esperaba que el primer parámetro fuera N o S".red
       puts ""
       error = true
     end
     arg2 = ARGV[2].upcase.chomp
     if !(arg2 == "T" || arg2 == "G" || arg2 == "B")
-      puts "Se esperaba que el tercer parametro fuera el tipo del restore: T[Todo], G[Git], B[Base de Datos]".red
+      puts "Se esperaba que el tercer parámetro fuera el tipo del restore: T[Todo], G[Git], B[Base de Datos]".red
       puts ""
       error = true
     end
     arg3 = ARGV[3].upcase.chomp
     if arg3 != "S" && arg3 != "N"
-      puts "Se esperaba que el cuarto parametro fuera N o S".red
+      puts "Se esperaba que el cuarto parámetro fuera N o S".red
       puts ""
       error = true
     end
     arg4 = ARGV[4].upcase.chomp
     if arg4 != "S" && arg4 != "N"
-      puts "Se esperaba que el quinto parametro fuera N o S".red
+      puts "Se esperaba que el quinto parámetro fuera N o S".red
       puts ""
       error = true
     end
@@ -738,11 +776,13 @@ if ARGV.length != 0
   end
   if error
     puts ""
-    puts "Parametros recibidos:  #{primeraVez} #{nombreInstancia} #{tipoRestore} #{respuestaGit} #{correrPruebas}".blue
+    puts "parámetros recibidos:  #{primeraVez} #{nombreInstancia} #{tipoRestore} #{respuestaGit} #{correrPruebas}".blue
     puts ""
     puts "Corrige e intenta nuevamente...".green
     puts ""
     exit(error)
+  else
+    origenParams = true
   end
 else
   puts ""
@@ -804,4 +844,4 @@ else
     end
   end
 end
-restore = RestoreInstanciaVagrant.new(primeraVez, nombreInstancia, tipoRestore, respuestaGit, correrPruebas)
+restore = RestoreInstanciaVagrant.new(origenParams, primeraVez, nombreInstancia, tipoRestore, respuestaGit, correrPruebas)
