@@ -401,14 +401,14 @@ class RestoreInstanciaVagrant
       res = `curl -I -s -L http://localhost:8080 | grep 'HTTP/1.1'`
       if !res.include? "200"
         puts " "
-        puts "Iniciando vagrant...".green
+        puts "==> Iniciando vagrant...".green
         system("vagrant reload")
       end
     else
       res = `ping 192.168.33.10`
       if res.include? "agotado"
         puts " "
-        puts "Iniciando vagrant...".green
+        puts "==> Iniciando vagrant...".green
         system("vagrant reload")
       end
     end
@@ -484,6 +484,13 @@ class RestoreInstanciaVagrant
       puts " "
       puts "==> Actualizando repositorio local de MerxBP...".green
       Dir.chdir(gitLocal)
+      res = `git branch`
+      exp = /\*\s#{@@paramsInstancia['branch']}/
+      if !exp.match(res)
+        system("git checkout -b #{@@paramsInstancia['branch']} origin/#{@@paramsInstancia['branch']}")
+      else
+        system("git checkout #{@@paramsInstancia['branch']}")
+      end
       system("git fetch origin #{@@paramsInstancia['branch']}")
       system("git merge origin/#{@@paramsInstancia['branch']}")
     else
@@ -491,6 +498,14 @@ class RestoreInstanciaVagrant
       puts "==> Creando repositorio local de MerxBP...".green
       Dir.chdir(@@data_hash['github']['local']['dir'])
       system("git clone #{@@gitMERX}")
+      Dir.chdir(gitLocal)
+      res = `git branch`
+      exp = /\*\s#{@@paramsInstancia['branch']}/
+      if !exp.match(res)
+        system("git checkout -b #{@@paramsInstancia['branch']} origin/#{@@paramsInstancia['branch']}")
+      else
+        system("git checkout #{@@paramsInstancia['branch']}")
+      end
     end
     return gitLocal
   end
