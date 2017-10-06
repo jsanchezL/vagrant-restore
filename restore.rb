@@ -5,6 +5,7 @@ require 'json'
 require 'rbconfig'
 require 'fileutils'
 require 'colorize'
+require 'thread'
 
 class RestoreInstanciaVagrant
   @@os = nil
@@ -438,7 +439,7 @@ class RestoreInstanciaVagrant
   def ejecutarScripts
     if !@@paramsInstancia['db_scripts'].empty?
       puts " "
-      puts "==> Ejecuntando scripts de base de datos...".green
+      puts "==> Ejecutando scripts de base de datos...".green
       scripts = @@paramsInstancia['db_scripts']
       scripts.each_index do |i|
         if @@os == "win"
@@ -454,14 +455,31 @@ class RestoreInstanciaVagrant
   def cambiarPermisos
     puts " "
     puts "==> Cambiando permisos a los archivos de la instancia...".green
-    system("vagrant ssh -c \"chmod 755 -R /vagrant/#{@@nombreInstancia}.merxbp.loc\"")
+    @s = Spinner.new()
+    while !system("vagrant ssh -c \"chmod 755 -R /vagrant/#{@@nombreInstancia}.merxbp.loc\"") do
+      sleep 0.5
+    end
   end
 
   def instalarComposerYnpm
     puts " "
     puts "==> Instalando composer y npm...".green
-    system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install\"")
-    system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; npm install\"")
+    t1 = Thread.new{
+      system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install\"")
+      puts ""
+      puts "======> ¡Instalado composer!".green
+      puts ""
+    }
+    t2 = Thread.new{
+      system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; npm install\"")
+      puts ""
+      puts "======> ¡Instalado npm!".green
+      puts ""
+    }
+    t1.join
+    t2.join
+    # system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install\"")
+    # system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; npm install\"")
   end
 
   def recordatorioDeInstalacionComposerYnpm
@@ -665,6 +683,29 @@ class RestoreInstanciaVagrant
       limpiarDirectorio(dirRepo)
     end
   end
+end
+
+class Spinner
+
+  GLYPHS = %w[| / – \\ | / – \\]
+
+  def initialize(msg = nil)
+    print "#{msg}... " unless msg.nil?
+    @thread = Thread.new do
+      while true
+        GLYPHS.each do |glyph|
+          print "\b#{glyph}"
+          sleep 0.10
+        end
+      end
+    end
+  end
+
+  def stop(msg = nil)
+    @thread.exit
+    print  "\b#{msg}\n"
+  end
+
 end
 
 
