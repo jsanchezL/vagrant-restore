@@ -247,5 +247,4 @@ if ($opts['zip_file'] !== false) {
         }
     }
 }
-
 ?>
