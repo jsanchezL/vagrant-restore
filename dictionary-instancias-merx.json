@@ -12,7 +12,8 @@
       "db_scripts": [],
 			"dir_backup": "",
 			"branch": "",
-			"version": ""
+			"version": "",
+			"packages": []
 		}
 	},
   "vagrant":{

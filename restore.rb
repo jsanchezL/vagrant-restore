@@ -85,10 +85,12 @@ class RestoreInstanciaVagrant
         obtenerCambiosDeGit
         if correrPruebas == 'S'
           instalarComposerYnpm
+          instalarPaquetes
           repararInstancia
           ejecutarPruebas
         else
           recordatorioDeInstalacionComposerYnpm
+          instalarPaquetes
           repararInstancia
         end
       end
@@ -96,10 +98,12 @@ class RestoreInstanciaVagrant
       obtenerCambiosDeGit
       if correrPruebas == 'S'
         instalarComposerYnpm
+        instalarPaquetes
         repararInstancia
         ejecutarPruebas
       else
         recordatorioDeInstalacionComposerYnpm
+        instalarPaquetes
         repararInstancia
       end
     elsif tipoRestore == 'B' #Base de datos
@@ -110,12 +114,18 @@ class RestoreInstanciaVagrant
         obtenerCambiosDeGit
         if correrPruebas == 'S'
           instalarComposerYnpm
+          instalarPaquetes
           repararInstancia
           ejecutarPruebas
         else
           recordatorioDeInstalacionComposerYnpm
+          instalarPaquetes
           repararInstancia
         end
+      else
+        recordatorioDeInstalacionComposerYnpm
+        instalarPaquetes
+        repararInstancia
       end
     end
     tiempoDeFin = Time.new.to_i
@@ -231,20 +241,20 @@ class RestoreInstanciaVagrant
       if !@@origenParams
         ingresarRutaDelBackupManualmente
       else
-          puts ""
-          puts "====> ¡No se encontró ruta del Backup!".red
-          puts ""
-          puts "====> Revisa la llave \"dir_backup\" del diccionario de datos y verifica manualmente que exista el directorio,".red
-          puts "====> en caso de que \"dir_backup\" este vacío, por favor comprueba que exista la siguiente ruta:".red
-          rutaBackup = Dir.pwd + "/proyectos/" + @@nombreInstancia + "/backups/lastest"
-          puts ""
-          puts "#{rutaBackup}".red
-          puts ""
-          puts "Si no existe la ruta, crear y copiar el archivo del último backup ahí".red
-          puts ""
-          puts "Intenta nuevamente...".green
-          puts ""
-          exit(true)
+        puts ""
+        puts "====> ¡No se encontró ruta del Backup!".red
+        puts ""
+        puts "====> Revisa la llave \"dir_backup\" del diccionario de datos y verifica manualmente que exista el directorio,".red
+        puts "====> en caso de que \"dir_backup\" este vacío, por favor comprueba que exista la siguiente ruta:".red
+        rutaBackup = Dir.pwd + "/proyectos/" + @@nombreInstancia + "/backups/lastest"
+        puts ""
+        puts "#{rutaBackup}".red
+        puts ""
+        puts "Si no existe la ruta, crear y copiar el archivo del último backup ahí".red
+        puts ""
+        puts "Intenta nuevamente...".green
+        puts ""
+        exit(true)
       end
     end
   end
@@ -420,19 +430,35 @@ class RestoreInstanciaVagrant
     puts "==> Restaurando bases de datos...".green
     system("vagrant ssh -c \"mysql -u root -proot -e 'drop database IF EXISTS #{@@nombreInstancia}; create database #{@@nombreInstancia}; show databases;'\"")
     if @@paramsInstancia['esOndemand']
-      system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia} < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}.sql\"")
+      @s = Spinner.new()
+      while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia} < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}.sql\"") do
+        sleep 0.5
+      end
+      @s.stop("done...")
       system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia} < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}_triggers.sql\"")
     else
-      system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia} < /vagrant/#{@@nombreInstancia}.merxbp.loc/*.sql\"")
+      @s = Spinner.new()
+      while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia} < /vagrant/#{@@nombreInstancia}.merxbp.loc/*.sql\"") do
+        sleep 0.5
+      end
+      @s.stop("done...")
     end
     puts ""
     puts "===> Origin copia de respaldo de la bd".green
     system("vagrant ssh -c \"mysql -u root -proot -e 'drop database IF EXISTS #{@@nombreInstancia}_origin; create database #{@@nombreInstancia}_origin; show databases;'\"")
     if @@paramsInstancia['esOndemand']
-      system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}.sql\"")
+      @s = Spinner.new()
+      while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}.sql\"") do
+        sleep 0.5
+      end
+      @s.stop("done...")
       system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}_triggers.sql\"")
     else
-      system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*.sql\"")
+      @s = Spinner.new()
+      while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*.sql\"") do
+        sleep 0.5
+      end
+      @s.stop("done...")
     end
   end
 
@@ -452,6 +478,36 @@ class RestoreInstanciaVagrant
     end
   end
 
+  def instalarPaquetes
+    if !@@paramsInstancia['packages'].empty?
+      if File.exist?(File.join(@@dir_instancia,"cliModuleInstall.php"))
+        puts " "
+        puts "==> Instalando paquetes...".green
+        paquetes = @@paramsInstancia['packages']
+        paquetes.each_index do |i|
+          if @@os == "win"
+            dir_paquetes = File.join(@@dir_instancia,"upload").gsub(%r{/}) {'\\'}
+            FileUtils.cp paquetes[i].gsub(%r{/}) {'\\'}, dir_paquetes
+          else
+            dir_paquetes = File.join(@@dir_instancia,"upload")
+            FileUtils.cp paquetes[i], dir_paquetes
+          end
+          name_paquete = File.basename(paquetes[i]);
+          @s = Spinner.new()
+          while !system("vagrant ssh -c\"cd /vagrant/#{@@nombreInstancia}.merxbp.loc;php cliModuleInstall.php -i /vagrant/#{@@nombreInstancia}.merxbp.loc -z /vagrant/#{@@nombreInstancia}.merxbp.loc/upload/#{name_paquete}\"") do
+            sleep 0.5
+          end
+        end
+        @s.stop("done...")
+        if existe_directorio?(File.join(@@dir_instancia,".git"))
+          puts " "
+          puts "====> ¡Recuerda, después de instalar paquetes, verifica el estado de tus archivos con: ".red
+          puts "========> cd #{@@dir_instancia}; git status;".red
+        end
+      end
+    end
+  end
+
   def cambiarPermisos
     puts " "
     puts "==> Cambiando permisos a los archivos de la instancia...".green
@@ -459,35 +515,80 @@ class RestoreInstanciaVagrant
     while !system("vagrant ssh -c \"chmod 755 -R /vagrant/#{@@nombreInstancia}.merxbp.loc\"") do
       sleep 0.5
     end
+    @s.stop("done...")
+  end
+
+  def installComposer
+    @@dir_instancia = obtenerRutaInstancia
+    dir_composer = File.join(@@dir_instancia,"vendor/composer/composer")
+    install_composer = false
+    if !existe_directorio?(dir_composer)
+      install_composer = true
+    end
+    return install_composer
+  end
+
+  def installNpm
+    if @@paramsInstancia['version'].to_i >= 7800
+      dir_npm = File.join(@@dir_instancia,"node_modules")
+    end
+    install_npm = false
+    if !existe_directorio?(dir_npm)
+      install_npm = true
+    end
+    return install_npm
   end
 
   def instalarComposerYnpm
-    puts " "
-    puts "==> Instalando composer y npm...".green
-    t1 = Thread.new{
+    if installComposer && installNpm
+      puts " "
+      puts "==> Instalando composer y npm...".green
+      t1 = Thread.new{
+        system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install\"")
+        puts ""
+        puts "======> ¡Instalado composer!".green
+        puts ""
+      }
+      t2 = Thread.new{
+        system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; npm install\"")
+        puts ""
+        puts "======> ¡Instalado npm!".green
+        puts ""
+      }
+      t1.join
+      t2.join
+    elsif installComposer
+      puts " "
+      puts "==> Instalando composer...".green
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install\"")
       puts ""
       puts "======> ¡Instalado composer!".green
       puts ""
-    }
-    t2 = Thread.new{
+    elsif installNpm
+      puts " "
+      puts "==> Instalando npm...".green
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; npm install\"")
       puts ""
       puts "======> ¡Instalado npm!".green
       puts ""
-    }
-    t1.join
-    t2.join
-    # system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install\"")
-    # system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; npm install\"")
+    end
   end
 
   def recordatorioDeInstalacionComposerYnpm
-    puts " "
-    puts "====> ¡Recuerda antes de correr tus pruebas, instala composer y npm, desde el directorio vagrant con las siguientes lineas! : ".red
-    puts "========> vagrant ssh -c 'cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install'".red
-    puts "========> vagrant ssh -c 'cd /vagrant/#{@@nombreInstancia}.merxbp.loc; npm install'".red
-
+    if installComposer && installNpm
+      puts " "
+      puts "====> ¡Recuerda antes de correr tus pruebas, instala composer y npm, desde el directorio vagrant con las siguientes lineas! : ".red
+      puts "========> vagrant ssh -c 'cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install'".red
+      puts "========> vagrant ssh -c 'cd /vagrant/#{@@nombreInstancia}.merxbp.loc; npm install'".red
+    elsif installComposer
+      puts " "
+      puts "====> ¡Recuerda antes de correr tus pruebas, instala composer, desde el directorio vagrant con la siguiente linea! : ".red
+      puts "========> vagrant ssh -c 'cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install'".red
+    elsif installNpm
+      puts " "
+      puts "====> ¡Recuerda antes de correr tus pruebas, instala npm, desde el directorio vagrant con la siguiente linea! : ".red
+      puts "========> vagrant ssh -c 'cd /vagrant/#{@@nombreInstancia}.merxbp.loc; npm install'".red
+    end
   end
 
   # Checar el comportamiento de esta modificacion
@@ -543,6 +644,7 @@ class RestoreInstanciaVagrant
     end
 
     system("git init")
+    system("git config core.fileMode false")
     system("git add .gitignore")
     system("git commit -m \"Primer commit\"")
     if @@os != "win"
@@ -567,9 +669,20 @@ class RestoreInstanciaVagrant
 
   def repararInstancia
     Dir.chdir(@@data_hash["vagrant"]['dir_base'])
+    repair = "#{@@data_hash["vagrant"]['dir_base']}/#{@@nombreInstancia}.merxbp.loc/repair.php"
+    if File.exist?(repair)
+      puts " "
+      puts "==> Reparando la instancia...".green
+      @s = Spinner.new()
+      while !system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; php repair.php\"") do
+        sleep 0.5
+      end
+      @s.stop("done...")
+    else
+      puts " "
+      puts "==> No se puedo reparar la instancia por falta del archivo repair.php, hacerlo de forma manual...".red
+    end
     puts " "
-    puts "==> Reparando la instancia...".green
-    system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; php repair.php\"")
   end
 
   def ejecutarPruebas
