@@ -21,6 +21,8 @@
 	},
 	"github":{
 		"user": "",
+		"name": "",
+		"email": "",
 		"local":{
 			"dir": "",
 			"remote": ""
