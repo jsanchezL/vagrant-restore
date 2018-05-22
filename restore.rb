@@ -19,7 +19,9 @@ class RestoreInstanciaVagrant
   @@dir_instancia = nil
   @@dir_scriptrb = nil
   @@origenParams = nil
-  @@EsSugar7 = nil
+  @@EsSugarV = nil
+  @@EsSubVersion = nil
+  @@dir_dummyFiles = "dummy_restore"
 
   def initialize(origenParams, primeraVez, nombreInstancia, tipoRestore, respuestaGit, correrPruebas)
     os
@@ -48,13 +50,20 @@ class RestoreInstanciaVagrant
       end
 
       if @@paramsInstancia['version'].to_i < 7710
-        @@EsSugar7 = 7
+        @@EsSugarV = 7
+        @@EsSubVersion = 7
       elsif @@paramsInstancia['version'].to_i < 7900
-        @@EsSugar7 = 8
+        @@EsSugarV = 7
+        @@EsSubVersion = 8
       elsif @@paramsInstancia['version'].to_i >= 7900 and @@paramsInstancia['version'].to_i < 71000
-        @@EsSugar7 = 9
+        @@EsSugarV = 7
+        @@EsSubVersion = 9
+      elsif @@paramsInstancia['version'].to_i > 71000 and @@paramsInstancia['version'].to_i < 71200
+        @@EsSugarV = 7
+        @@EsSubVersion = 10
       else
-        @@EsSugar7 = 10
+        @@EsSugarV = 8
+        @@EsSubVersion = 0
       end
     end
   end
@@ -102,7 +111,7 @@ class RestoreInstanciaVagrant
       if respuestaGit == 'S'
         obtenerCambiosDeGit
         if correrPruebas == 'S'
-          instalarComposerYnpm
+          instalarComposerYJsTest
           instalarPaquetes
           repararInstancia
           ejecutarPruebas
@@ -115,7 +124,7 @@ class RestoreInstanciaVagrant
     elsif tipoRestore == 'G' #Sólo git
       obtenerCambiosDeGit
       if correrPruebas == 'S'
-        instalarComposerYnpm
+        instalarComposerYJsTest
         instalarPaquetes
         repararInstancia
         ejecutarPruebas
@@ -131,7 +140,7 @@ class RestoreInstanciaVagrant
       if respuestaGit == 'S'
         obtenerCambiosDeGit
         if correrPruebas == 'S'
-          instalarComposerYnpm
+          instalarComposerYJsTest
           instalarPaquetes
           repararInstancia
           ejecutarPruebas
@@ -155,10 +164,10 @@ class RestoreInstanciaVagrant
   end
 
   def instalarVagrantBoxEnEquipo
-    Dir.chdir("#{@@data_hash['vagrant']['dir_base']}/#{@@EsSugar7}")
+    Dir.chdir("#{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/")
     puts " "
     puts "==> Instalando Vagrant Box...".green
-    case @@EsSugar7
+    case @@EsSubVersion
     when 7
       system("vagrant init mmarum/sugar7-php54")
     when 8
@@ -167,8 +176,10 @@ class RestoreInstanciaVagrant
       system("vagrant init sugarcrm/php71")
     when 10
       system("vagrant init sugarcrm/php71es54")
+    when 0
+      system("vagrant init sugarcrm/php71es56 --box-version 1.0")
     end
-    system("vagrant up --provider virtualbox")
+    system("vagrant up")
   end
 
   def editarVagrantFile
@@ -285,15 +296,19 @@ class RestoreInstanciaVagrant
   def limpiarInstancia(ruta)
     puts " "
     puts "==> Limpiando la instancia...".green
+
     restore = File.join(ruta,@@nombreAliasInstancia+'*')
+
     if @@os == "win"
       restore = restore.gsub(%r{\\}) {'/'}
     end
+
     restore = Dir.glob(restore).select{ |file| !File.file?(file) }[0]
     FileUtils.cd(restore)
-
     sugardir = Dir.glob(File.join(restore,'sugar*')).select{ |file| !File.file?(file) }[0]
+
     if existe_directorio?(sugardir)
+
       cache = File.join(sugardir, "cache")
       upload = File.join(sugardir, "upload")
       limpiarDirectorio(cache)
@@ -314,8 +329,11 @@ class RestoreInstanciaVagrant
       logs.each_index do |l|
         File.delete(logs[l])
       end
+
       @@paramsInstancia['esOndemand'] = true
-    elsif existe_directorio(Dir.glob("#{restore}/#{@@nombreAliasInstancia}*").select{ |file| !File.file?(file) }[0]) #instancias que no provengan de sugarondemand.com
+
+    elsif existe_directorio?(Dir.glob("#{restore}/#{@@nombreAliasInstancia}*").select{ |file| !File.file?(file) }[0]) #instancias que no provengan de sugarondemand.com
+
       instanciaDir = Dir.glob("#{restore}/#{@@nombreAliasInstancia}*").select{ |file| !File.file?(file) }[0]
       cache = File.join(instanciaDir, "cache")
       upload = File.join(instanciaDir, "upload")
@@ -332,12 +350,23 @@ class RestoreInstanciaVagrant
         system("mkdir #{upload}")
         system("attrib #{restore} /S /D -S -A -R -I")
       end
+
       logs = Dir.glob(File.join(instanciaDir, "*.log"))
       logs.each_index do |l|
         File.delete(logs[l])
       end
+
       @@paramsInstancia['esOndemand'] = false
     end
+
+    # Se copia el htaccess cuando no tenga el backup de la instancia
+    dummy_htaccess = "#{@@dir_scriptrb}/#{@@dir_dummyFiles}/.htaccess"
+    htaccess = "#{sugardir}/.htaccess"
+
+    if !existe_archivo?(htaccess)
+      FileUtils.cp dummy_htaccess, htaccess
+    end
+
   end
 
   def copiarArchivosAVagrant(ruta)
@@ -358,7 +387,7 @@ class RestoreInstanciaVagrant
       if @@os == "win"
         rutaRestore = rutaRestore.gsub(%r{/}) {'\\'}
         dir_instancia = @@dir_instancia.gsub(%r{/}) {'\\'}
-        system("attrib #{@@data_hash['vagrant']['dir_base']}/#{@@EsSugar7} /S /D -S -A -R -I")
+        system("attrib #{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/#{@@EsSubVersion} /S /D -S -A -R -I")
         system("move /Y #{rutaRestore} #{dir_instancia}")
       else
         FileUtils.cp_r rutaRestore, @@dir_instancia
@@ -430,7 +459,7 @@ class RestoreInstanciaVagrant
   end
 
   def activarVagrant
-    Dir.chdir("#{@@data_hash['vagrant']['dir_base']}/#{@@EsSugar7}")
+    Dir.chdir("#{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/#{@@EsSubVersion}")
     if @@os != 'win'
       res = `curl -I -s -L http://localhost:8080 | grep 'HTTP/1.1'`
       if !res.include? "200"
@@ -491,12 +520,12 @@ class RestoreInstanciaVagrant
       puts "==> Ejecutando scripts de base de datos...".green
       scripts = @@paramsInstancia['db_scripts']
       scripts.each_index do |i|
-        if @@os == "win"
+        # if @@os == "win"
+        #   comando = "vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia} -e '#{scripts[i]}'\""
+        # else
           comando = "vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia} -e '#{scripts[i]}'\""
-        else
-          comando = "vagrant ssh -c 'mysql -u root -proot #{@@nombreInstancia} -e \"#{scripts[i]}\"'"
           puts "#{comando}"
-        end
+        # end
         system(comando)
       end
     end
@@ -552,32 +581,34 @@ class RestoreInstanciaVagrant
     return install_composer
   end
 
-  def installNpm
-    install_npm = false
+  def installJsTest
+    install_jsTest = false
 
-    # if @@EsSugar7 >= 8 && @@EsSugar7 < 10
-      dir_npm = File.join(@@dir_instancia,"node_modules")
+    # if @@EsSugarV >= 8 && @@EsSugarV < 10
+      dir_jsTest = File.join(@@dir_instancia,"node_modules")
     # end #falta caso para sugar 7.10 o superior
 
-    if !existe_directorio?(dir_npm)
-      install_npm = true
+    if !existe_directorio?(dir_jsTest)
+      install_jsTest = true
     end
-    return install_npm
+    return install_jsTest
   end
 
-  def instalarComposerYnpm
+  def instalarComposerYJsTest
 
-    if @@EsSugar7 < 10
+    if @@EsSubVersion < 10 and @@EsSugarV == 7
       jsTester = 'npm'
     else
       jsTester = 'yarn'
     end
 
-    if installComposer && installNpm
+    if installComposer && installJsTest
       puts " "
       puts "==> Instalando composer y #{jsTester}...".green
       t1 = Thread.new{
-        if @@EsSugar7 >= 10
+        if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
+          composer_json = "vagrant ssh -c 'sed -i \"s/satis.sugardev.team/packagist.org/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/composer.json'"
+          system(composer_json)
           system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"")
           system("vagrant ssh -c \"sudo service apache2 restart\"")
         end
@@ -597,7 +628,7 @@ class RestoreInstanciaVagrant
     elsif installComposer
       puts " "
       puts "==> Instalando composer...".green
-      if @@EsSugar7 >= 10
+      if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
         system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"")
         system("vagrant ssh -c \"sudo service apache2 restart\"")
       end
@@ -605,7 +636,7 @@ class RestoreInstanciaVagrant
       puts ""
       puts "======> ¡Instalado composer!".green
       puts ""
-    elsif installNpm
+    elsif installJsTest
       puts " "
       puts "==> Instalando #{jsTester}...".green
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; #{jsTester} install\"")
@@ -616,16 +647,16 @@ class RestoreInstanciaVagrant
   end
 
   def recordatorioDeInstalacionComposerYnpm
-    if @@EsSugar7 < 10
+    if @@EsSubVersion < 10 and @EsSugarV == 7
       jsTester = 'npm'
     else
       jsTester = 'yarn'
     end
 
-    if installComposer && installNpm
+    if installComposer && installJsTest
       puts " "
       puts "====> ¡Recuerda antes de correr tus pruebas, instala composer y #{jsTester}, desde el directorio vagrant con las siguientes lineas! : ".red
-      if @@EsSugar7 >= 10
+      if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
         puts "========> vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"".red
         puts "========> vagrant ssh -c \"sudo service apache2 restart\"".red
       end
@@ -634,12 +665,12 @@ class RestoreInstanciaVagrant
     elsif installComposer
       puts " "
       puts "====> ¡Recuerda antes de correr tus pruebas, instala composer, desde el directorio vagrant con la siguiente linea! : ".red
-      if @@EsSugar7 >= 10
+      if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
         puts "========> vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"".red
         puts "========> vagrant ssh -c \"sudo service apache2 restart\"".red
       end
       puts "========> vagrant ssh -c 'cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install'".red
-    elsif installNpm
+    elsif installJsTest
       puts " "
       puts "====> ¡Recuerda antes de correr tus pruebas, instala #{jsTester}, desde el directorio vagrant con la siguiente linea! : ".red
       puts "========> vagrant ssh -c 'cd /vagrant/#{@@nombreInstancia}.merxbp.loc; #{jsTester} install'".red
@@ -728,8 +759,8 @@ class RestoreInstanciaVagrant
   end
 
   def repararInstancia
-    Dir.chdir("#{@@data_hash['vagrant']['dir_base']}/#{@@EsSugar7}")
-    repair = "#{@@data_hash['vagrant']['dir_base']}/#{@@EsSugar7}/#{@@nombreInstancia}.merxbp.loc/repair.php"
+    Dir.chdir("#{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/#{@@EsSubVersion}")
+    repair = "#{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/#{@@EsSubVersion}/#{@@nombreInstancia}.merxbp.loc/repair.php"
     if File.exist?(repair)
       puts " "
       puts "==> Reparando la instancia...".green
@@ -748,16 +779,16 @@ class RestoreInstanciaVagrant
   def ejecutarPruebas
     puts " "
     puts "==> Ejecutando las pruebas PHP...".green
-    if @@EsSugar7 < 10
+    if @@EsSubVersion < 10
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/tests; ../vendor/phpunit/phpunit/phpunit\"")
     else
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/tests/{old}; ../../vendor/bin/phpunit\"")
     end
     puts " "
     puts "==> Ejecutando las pruebas JS...".green
-    if @@EsSugar7 < 8
+    if @@EsSubVersion < 8
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/tests; grunt karma:ci\"")
-    elsif @@EsSugar7 >= 8 && @@EsSugar7 < 10
+    elsif @@EsSubVersion >= 8 && @@EsSubVersion < 10
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/node_modules/gulp/bin/gulp.js karma --ci\"")
     # else aquí va el caso de de sugar 7.10 o superior
     end
@@ -824,11 +855,15 @@ class RestoreInstanciaVagrant
   end
 
   def obtenerRutaInstancia
-    @@data_hash['vagrant']['dir_base'] + "/" + @@EsSugar7.to_s + "/" + @@nombreInstancia + ".merxbp.loc"
+    @@data_hash['vagrant']['dir_base'] + @@EsSugarV.to_s + "/" + @@EsSubVersion.to_s + "/" + @@nombreInstancia + ".merxbp.loc"
   end
 
   def existe_directorio?(directory)
     File.directory?(directory)
+  end
+
+  def existe_archivo?(file)
+    File.file?(file)
   end
 
   #Investiga que plataforma estamos utilizando
