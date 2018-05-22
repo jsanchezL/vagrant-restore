@@ -58,7 +58,7 @@ class RestoreInstanciaVagrant
       elsif @@paramsInstancia['version'].to_i >= 7900 and @@paramsInstancia['version'].to_i < 71000
         @@EsSugarV = 7
         @@EsSubVersion = 9
-      elsif @@paramsInstancia['version'].to_i > 71000 and @@paramsInstancia['version'].to_i < 71200
+      elsif @@paramsInstancia['version'].to_i >= 71000 and @@paramsInstancia['version'].to_i < 71200
         @@EsSugarV = 7
         @@EsSubVersion = 10
       else
@@ -659,6 +659,8 @@ class RestoreInstanciaVagrant
       puts " "
       puts "====> ¡Recuerda antes de correr tus pruebas, instala composer y #{jsTester}, desde el directorio vagrant con las siguientes lineas! : ".red
       if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
+        composer_json = "vagrant ssh -c 'sed -i \"s/satis.sugardev.team/packagist.org/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/composer.json'"
+        puts "========> #{composer_json}".red
         puts "========> vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"".red
         puts "========> vagrant ssh -c \"sudo service apache2 restart\"".red
       end
@@ -668,6 +670,8 @@ class RestoreInstanciaVagrant
       puts " "
       puts "====> ¡Recuerda antes de correr tus pruebas, instala composer, desde el directorio vagrant con la siguiente linea! : ".red
       if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
+        composer_json = "vagrant ssh -c 'sed -i \"s/satis.sugardev.team/packagist.org/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/composer.json'"
+        puts "========> #{composer_json}".red
         puts "========> vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"".red
         puts "========> vagrant ssh -c \"sudo service apache2 restart\"".red
       end
