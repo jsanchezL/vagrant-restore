@@ -629,6 +629,8 @@ class RestoreInstanciaVagrant
       puts " "
       puts "==> Instalando composer...".green
       if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
+        composer_json = "vagrant ssh -c 'sed -i \"s/satis.sugardev.team/packagist.org/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/composer.json'"
+        system(composer_json)
         system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"")
         system("vagrant ssh -c \"sudo service apache2 restart\"")
       end
