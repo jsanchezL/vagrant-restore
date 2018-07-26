@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+use Sugarcrm\Sugarcrm\Util\Files\FileLoader;
 
 function output_msg($msg)
 {
@@ -57,6 +58,8 @@ function unzip_package($zip_file)
 
 function perform_module_install($opts)
 {
+    define('SUGARCRM_PRE_INSTALL_FILE', 'scripts/pre_install.php');
+    define('SUGARCRM_POST_INSTALL_FILE', 'scripts/post_install.php');
     global $sugar_config, $mod_strings, $current_language, $current_user;
 
     if ($opts['zip_file'] !== false && !is_readable($opts['zip_file'])) {
@@ -133,6 +136,15 @@ function perform_module_install($opts)
     );
 
     output_msg('Adding UpgradeHistory object.');
+    $unzip_dir = $opts['expanded_zip'];
+    $file = "$unzip_dir/" . constant('SUGARCRM_PRE_INSTALL_FILE');
+    // echo "\nfile:".$file."\n";
+    if(is_file($file))
+    {
+        // echo "\nEntra a Post install:";
+        include FileLoader::validateFilePath($file);
+        pre_install();
+    }
     $new_upgrade->filename = $local_zip_file;
     $new_upgrade->type = array_key_exists('type', $manifest) ? $manifest['type'] : 'module';
     $new_upgrade->status = 'installed';
@@ -142,6 +154,14 @@ function perform_module_install($opts)
     $new_upgrade->manifest = base64_encode(serialize($to_serialize));
 
     $new_upgrade->save();
+    $file = "$unzip_dir/" . constant('SUGARCRM_POST_INSTALL_FILE');
+    echo "\nfile:".$file."\n";
+    if(is_file($file))
+    {
+        echo "\nEntra a Post install:";
+        include FileLoader::validateFilePath($file);
+        post_install();
+    }
     output_msg('Installed: version: ' . $new_upgrade->version . ' md5sum: ' . $new_upgrade->md5sum);
 
     return 0;
