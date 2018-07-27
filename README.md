@@ -39,11 +39,11 @@ En Mac OS X, se corren las siguientes lineas:
   sudo gem install colorize
 ```
 
-En GNU/Linux se hace algo parecido que en Mac OS X, con excepción de la primera linea.
+En GNU/Linux se hace algo parecido que en Mac OS X, con excepción de la primera línea.
 
 ## dictionary-instancias-merx
 
-Es un archivo json en el cual reside las configuraciones para los restores. La estructura es la siguiente:
+Es un archivo json en el cual residen las configuraciones para los restores. La estructura es la siguiente:
 * instancias-merx
   * nombreInstancia
     * alias
@@ -77,17 +77,19 @@ Es un archivo json en el cual reside las configuraciones para los restores. La e
 
 ## ejecución
 
-El programa tiene 2 modos de ejecutarse, el primero es por parametros y el segundo de forma interactiva.
+El programa tiene 2 modos de ejecutarse, el primero es por parámetros y el segundo de forma interactiva.
 
 ### parametrizado
 
 Este modo tiene las siguientes opciones:
 * primeraVez (S/N) - Se refiere a si la instalación o restore es completamente nuevo en el equipo anfitrión.
 * nombreInstancia - Nombre del proyecto a restaurar o instalar en el vagrant box
-* tipoRestore [T(Todo), G(git), B(Base de Datos)] - La opción T(Todo) se ocupa para hacer un restore de base de datos, obtener una copia del repositorio git, instalar devtools(composer, npm), paquetes de personalizaciones, y correr pruebas unitarias de PHP y JS. G(git) se ocupa para restarurar la rama o cambiar, se tiene algún riesgo de colisionar entre ramas por lo cual se debe ocupar con cuidado. B(Base de Datos) restaura la base de datos y se instalan los paquetes de personalizaciones que se necesiten.
+* tipoRestore [T(Todo), G(git), B(Base de Datos)] - La opción T(Todo) se ocupa para hacer un restore de base de datos, obtener una copia del repositorio git, instalar devtools(composer, npm), paquetes de personalizaciones, y correr pruebas unitarias de PHP y JS. G(git) se ocupa para restaurar la rama o cambiar, se tiene algún riesgo de colisionar entre ramas por lo cual se debe ocupar con cuidado. B(Base de Datos) restaura la base de datos y se instalan los paquetes de personalizaciones que se necesiten.
 * respuestaGit (S/N)
 * correrPruebas (S/N)
 
 ```sh
 ruby restore.rb (S/N) nombreInstancia [tipoRestore, respuestaGit, correrPruebas]
 ```
+
+
