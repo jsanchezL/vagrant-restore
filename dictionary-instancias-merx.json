@@ -2,33 +2,34 @@
 	"instancias-merx": {
 		"nombreInstancia": {
 			"alias":"",
-			"esOndemand": "",
-			"urlOnSite": "",
-      "edicion": "",
-			"db_host_name": "",
-			"db_user_name": "",
-			"db_password": "",
-			"db_name": "",
-			"host_elastic": "",
+			"esOndemand":"",
+			"urlOnSite":"",
+      "edicion":"",
+			"db_host_name":"",
+			"db_user_name":"",
+			"db_password":"",
+			"db_name":"",
+			"host_elastic":"",
       "db_scripts": [],
-			"dir_backup": "",
-			"branch": "",
-			"version": "",
+			"dir_backup":"",
+			"branch":"",
+			"version":"",
 			"dir_packages":"",
 			"packages": []
 		}
 	},
   "vagrant":{
-		"dir_base": ""
+		"dir_base":"",
+		"multiversionSugar":"false"
 	},
 	"cliModuleInstall":"",
 	"github":{
-		"user": "",
-		"name": "",
-		"email": "",
+		"user":"",
+		"name":"",
+		"email":"",
 		"local":{
-			"dir": "",
-			"remote": ""
+			"dir":"",
+			"remote":""
 		}
 	},
 	"nginx":{

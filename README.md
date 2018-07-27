@@ -33,63 +33,107 @@ E instalar posiblemente las gems json y colorize
 En Mac OS X, se corren las siguientes lineas:
 
 ```sh
+  brew install rbenv ruby-build
   which gem
   sudo gem update --system
   sudo gem install json
   sudo gem install colorize
 ```
 
-En GNU/Linux se hace algo parecido que en Mac OS X, con excepción de la primera línea.
+En GNU/Linux se hace algo parecido que en Mac OS X, con excepción de las 2 primera línea. Para más información pudes consultar la [Guía para instalar ruby][21f64003]
+
+  [21f64003]: https://gorails.com/setup "Instalar Ruby"
 
 ## dictionary-instancias-merx
 
 Es un archivo json en el cual residen las configuraciones para los restores. La estructura es la siguiente:
 * instancias-merx
-  * nombreInstancia
-    * alias
-    * esOndemand
-    * urlOnSite
-    * edicion
-    * db_host_name
-    * db_user_name
-    * db_password
-    * db_name
-    * host_elastic
-    * db_scripts
-    * dir_backup
-    * branch
-    * version
-    * dir_packages
-    * packages
+  * **nombreInstancia** - Nombre de la instancia. Por ejemplo: "lowes"
+    * **alias** - Alias con el cual podemos desplegarla la instancia. Por ejemplo: "lowesqa"
+    * **esOndemand** - "true|false"
+    * **urlOnSite** - Si la instancia no es ondemand se especifica la url a buscar dentro de los archivos config.php y .htaccess
+    * **edicion** - "ent|pro"
+    * **db_host_name** - Url del servidor en donde esta la base de datos en ondemand | onsite (Examinar config.php del backup)
+    * **db_user_name** - Usuario que se ocupa para ingresar a la base de datos (Examinar config.php del backup)
+    * **db_password** - Contraseña que se emplea para el ingreso a la base de datos (Examinar config.php del backup)
+    * **db_name** - Nombre de la base de datos (Examinar config.php del backup)
+    * **host_elastic** - Url del servidor en donde corre Elastic Search en ondemand | onsite (Examinar config.php del backup)
+    * **db_scripts** - Array de instrucciones SQL, si no se especifican no son consideradas.
+    * **dir_backup** - Directorio donde se ubican los backups de la instancia. Por ejemplo: /home/usuario/proyectos/lowes/backups/lastest
+    * **branch** - Rama de github dentro del repositorio de custom_sugarcrm de merx
+    * **version** - Versión de Sugar para la version 8.0.0 será convierte a 80000
+    * **dir_packages** - Directorio donde se encuentran los paquetes de personalizaciones. Por ejemplo: /home/usuario/merx/sugarcrm_packages
+    * **packages** - Array con los nombres de los paquetes a ser considerados para construirlos e instalarlos en la instancia, si no se especifican no son considerados.
 * vagrant
-  * dir_base
-* cliModuleInstall
+  * **dir_base** - Directorio donde se encuentra instalado el box de vagrant en nuestro sistema. Por ejemplo: /home/usuario/merx/vagrant/sugar_env/sugar
+  * **multiversionSugar** - "false|true" Es una opción para soportar varias versiones de sugar en un mismo box de vagrant.
+* **cliModuleInstall** - Ruta del archivo para instalar paquetes por medio de linea de comandos. Por ejemplo: /home/usuario/Documentos/merx/vagrant-restore/cliModuleInstall.php
 * github
-  * user
-  * name
-  * email
+  * **user** - Usuario de github
+  * **name** - Nombre completo que esta en tu perfil de github
+  * **email** - Email con el cual te diste de alta en github
   * local
-    * dir
-    * remote
-* nginx
-  * dir_base
-  * dir
+    * **dir** - Directorio donde se encontrará una copia local del repositorio custom_sugarcrm de MerxBP. Ejemplo: /home/usuario/merx
+    * **remote** - Repositorio de github. Ejemplo: git@github.com:MerxBusinessPerformance/custom_sugarcrm.git
+* nginx - Aún en fase experimental.
+  * **dir_base**
+  * **dir**
 
 ## ejecución
 
 El programa tiene 2 modos de ejecutarse, el primero es por parámetros y el segundo de forma interactiva.
 
-### parametrizado
-
-Este modo tiene las siguientes opciones:
-* primeraVez (S/N) - Se refiere a si la instalación o restore es completamente nuevo en el equipo anfitrión.
-* nombreInstancia - Nombre del proyecto a restaurar o instalar en el vagrant box
-* tipoRestore [T(Todo), G(git), B(Base de Datos)] - La opción T(Todo) se ocupa para hacer un restore de base de datos, obtener una copia del repositorio git, instalar devtools(composer, npm), paquetes de personalizaciones, y correr pruebas unitarias de PHP y JS. G(git) se ocupa para restaurar la rama o cambiar, se tiene algún riesgo de colisionar entre ramas por lo cual se debe ocupar con cuidado. B(Base de Datos) restaura la base de datos y se instalan los paquetes de personalizaciones que se necesiten.
-* respuestaGit (S/N)
-* correrPruebas (S/N)
+Se puede ejecutar como un script shell sólo tenemos que darle permisos de ejecución.
 
 ```sh
-ruby restore.rb (S/N) nombreInstancia [tipoRestore, respuestaGit, correrPruebas]
+chmod +x restore.rb
 ```
 
+### parametrizado
 
+```sh
+ruby restore.rb primeraVez nombreInstancia [tipoRestore, respuestaGit, correrPruebas]
+./restore.rb primeraVez nombreInstancia [tipoRestore, respuestaGit, correrPruebas]
+```
+
+Este modo tiene las siguientes opciones:
+* primeraVez (s/n)
+  - La respuesta "s" se refiere a que es una instancia totalmente nueva y se debe instalar desde 0 en el equipo anfitrión.
+  - La respuesta "n" es que se tiene un vagrant box previamente instalado que es compatible con la instancia a restaurar.
+* nombreInstancia - Nombre del proyecto a restaurar o instalar en el vagrant box
+* tipoRestore [T, G, B, O] - Es opcional por default sera T
+  - T (Todo) se ocupa para hacer un restore de base de datos, obtener una copia del repositorio git, instalar devtools(composer, npm), paquetes de personalizaciones, y correr pruebas unitarias de PHP y JS.
+  - G (git) se ocupa para restaurar la rama o cambiar, se tiene algún riesgo de colisionar entre ramas por lo cual se debe ocupar con cuidado.
+  - B (Base de Datos) restaura la base de datos y se instalan los paquetes de personalizaciones que se necesiten.
+  - O (Original) sirve para instalar una instancia sin paquetes, sin pruebas, sin repositorio git.
+* respuestaGit (s/n) - Es opcional por default será N
+  - Con la respuesta "s" se intenta descargar los últimos cambios de la rama github que se haya especificado en la configuración del
+  - Con la respuesta "n" se descarta la actualización de archivos desde github
+* correrPruebas (s/n) - Es opcional por default será N
+  - Con una respuesta afirmativa "s" se intentará ejecutar las pruebas unitarias de PHP y JS
+  - Con una respuesta negativa "n" se omite la ejecución sin embargo nos dará un mensaje de recordatorio por si queremos mas adelante ejecutar dichas pruebas de forma manual.
+
+##### Ejemplos de uso
+
+Queremos restaurar una instancia ondemand del proyecto ruhrpumpen de forma total con los últimos cambios de github de ese proyecto y sin correr prueba unitarias.
+
+```sh
+ruby restore.rb n ruhrpumpen t s n
+./restore.rb n ruhrpumpen t s n
+```
+
+Queremos restaurar solamente la base de datos de una instancia ondemand del proyecto ruhrpumpen sin descargar los últimos cambios de github de ese proyecto y sin correr prueba unitarias.
+
+```sh
+ruby restore.rb n ruhrpumpen b
+./restore.rb n ruhrpumpen b
+```
+
+### interactivo
+
+En esta opción se nos depliega un serie de preguntas en la terminal o consola que nos guian por el proceso.
+
+```sh
+ruby restore.rb
+./restore.rb
+```
