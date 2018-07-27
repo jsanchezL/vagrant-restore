@@ -21,7 +21,7 @@
   "vagrant":{
 		"dir_base": ""
 	},
-	"cliModuleInstall":""
+	"cliModuleInstall":"",
 	"github":{
 		"user": "",
 		"name": "",
