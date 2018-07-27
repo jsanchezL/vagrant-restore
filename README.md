@@ -46,10 +46,34 @@ En GNU/Linux se hace algo parecido que en Mac OS X, con excepción de la primera
 Es un archivo json en el cual reside las configuraciones para los restores. La estructura es la siguiente:
 * instancias-merx
   * nombreInstancia
+    * alias
     * esOndemand
-    *
+    * urlOnSite
+    * edicion
+    * db_host_name
+    * db_user_name
+    * db_password
+    * db_name
+    * host_elastic
+    * db_scripts
+    * dir_backup
+    * branch
+    * version
+    * dir_packages
+    * packages
 * vagrant
+  * dir_base
+* cliModuleInstall
 * github
+  * user
+  * name
+  * email
+  * local
+    * dir
+    * remote
+* nginx
+  * dir_base
+  * dir
 
 ## ejecución
 
