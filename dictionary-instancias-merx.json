@@ -1,6 +1,7 @@
 {
 	"instancias-merx": {
 		"nombreInstancia": {
+			"alias":"",
 			"esOndemand": "",
 			"urlOnSite": "",
       "edicion": "",
@@ -13,6 +14,7 @@
 			"dir_backup": "",
 			"branch": "",
 			"version": "",
+			"dir_packages":"",
 			"packages": []
 		}
 	},
@@ -27,5 +29,9 @@
 			"dir": "",
 			"remote": ""
 		}
+	},
+	"nginx":{
+		"dir_base":"",
+		"dir":""
 	}
 }

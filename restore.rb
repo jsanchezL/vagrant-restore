@@ -310,7 +310,7 @@ class RestoreInstanciaVagrant
     if existe_directorio?(sugardir)
 
       cache = File.join(sugardir, "cache")
-      upload = File.join(sugardir, "upload")
+      upload = File.join(sugardir, "upload")      
       limpiarDirectorio(cache)
       limpiarDirectorio(upload)
 
@@ -531,23 +531,65 @@ class RestoreInstanciaVagrant
     end
   end
 
+  def copyCliModuleInstall
+    if @@os == "win"
+      FileUtils.cp @@data_hash['cliModuleInstall'].gsub(%r{/}) {'\\'}, @@dir_instancia.gsub(%r{/}) {'\\'}
+    else
+      FileUtils.cp @@data_hash['cliModuleInstall'], @@dir_instancia
+    end
+  end
+  
+  def createPackages
+    # En linux zip -r $PWD/PI_EmailTemplatesAforeXXI.zip . -x .DS_Store *.md
+    paquetes = @@paramsInstancia['packages']
+    paquetes.each_index do |p| 
+     dir_package = File.join(@@paramsInstancia['dir_packages'], paquetes[p])     
+     Dir.chdir(dir_package)
+     package = File.join(dir_package, "#{paquetes[p]}.zip")     
+     if @@os == "win"
+       package = package.gsub(%r{/}) {'\\'}
+       # TODO: How to zip en windows
+     else       
+       system("zip -r #{package} . -x .DS_Store *.md") 
+     end
+    end
+      
+  end
+
   def instalarPaquetes
     if !@@paramsInstancia['packages'].empty?
-      if File.exist?(File.join(@@dir_instancia,"cliModuleInstall.php"))
-        puts " "
-        puts "==> Instalando paquetes...".green
+      puts " "
+      puts "==> Instalando paquetes...".green
+      
+      copyCliModuleInstall
+      createPackages
+      Dir.chdir(@@dir_instancia)
+      
+      if File.exist?(File.join(@@dir_instancia,"cliModuleInstall.php"))        
+      
+        upload_dir = File.join(@@dir_instancia,"upload")
+        upgrades = File.join(upload_dir, "upgrades")
+        dir_paquetes = File.join(upgrades, "module")   
+      
+        if @@os == "win"
+          Dir.mkdir(upgrades.gsub(%r{/}) {'\\'})            
+          Dir.mkdir(dir_paquetes.gsub(%r{/}) {'\\'}) 
+        else
+          system("mkdir #{upgrades}")
+          system("mkdir #{dir_paquetes}") 
+        end
+      
         paquetes = @@paramsInstancia['packages']
         paquetes.each_index do |i|
-          if @@os == "win"
-            dir_paquetes = File.join(@@dir_instancia,"upload").gsub(%r{/}) {'\\'}
-            FileUtils.cp paquetes[i].gsub(%r{/}) {'\\'}, dir_paquetes
-          else
-            dir_paquetes = File.join(@@dir_instancia,"upload")
-            FileUtils.cp paquetes[i], dir_paquetes
+          package = File.join(File.join(@@paramsInstancia['dir_packages'], paquetes[i]), "#{paquetes[i]}.zip")
+          if @@os == "win"                                    
+            FileUtils.cp package.gsub(%r{/}) {'\\'}, dir_paquetes.gsub(%r{/}) {'\\'}
+          else                                          
+            FileUtils.cp package, dir_paquetes
           end
-          name_paquete = File.basename(paquetes[i]);
+          name_paquete = File.basename(package);
           @s = Spinner.new()
-          while !system("vagrant ssh -c\"cd /vagrant/#{@@nombreInstancia}.merxbp.loc;php cliModuleInstall.php -i /vagrant/#{@@nombreInstancia}.merxbp.loc -z /vagrant/#{@@nombreInstancia}.merxbp.loc/upload/#{name_paquete}\"") do
+          while !system("vagrant ssh -c\"cd /vagrant/#{@@nombreInstancia}.merxbp.loc;php cliModuleInstall.php -i /vagrant/#{@@nombreInstancia}.merxbp.loc -z /vagrant/#{@@nombreInstancia}.merxbp.loc/upload/upgrades/module/#{name_paquete}\"") do
             sleep 0.5
           end
         end
