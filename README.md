@@ -61,7 +61,7 @@ Es un archivo json en el cual residen las configuraciones para los restores. La 
     * **db_scripts** - Array de instrucciones SQL, si no se especifican no son consideradas.
     * **dir_backup** - Directorio donde se ubican los backups de la instancia. Por ejemplo: /home/usuario/proyectos/lowes/backups/lastest
     * **branch** - Rama de github dentro del repositorio de custom_sugarcrm de merx
-    * **version** - Versión de Sugar para la version 8.0.0 será convierte a 80000
+    * **version** - Versión de Sugar, ejemplo: para la versión 8.0.0 será convertida así 80000.
     * **dir_packages** - Directorio donde se encuentran los paquetes de personalizaciones. Por ejemplo: /home/usuario/merx/sugarcrm_packages
     * **packages** - Array con los nombres de los paquetes a ser considerados para construirlos e instalarlos en la instancia, si no se especifican no son considerados.
 * vagrant
