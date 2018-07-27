@@ -1,4 +1,4 @@
-# vagrant-restore
+# Vagrant-restore
 
 Permite instalar o restaurar instancias de SugarCRM 7.x ondemand u onsite en un Vagrant box para trabajar de forma local
 en el desarrollo de personalizaciones del CRM, seguimiento a bugs levantados en el portal de casos, o simplemente probar algún
@@ -6,7 +6,7 @@ sabor de Sugar.
 
 El programa fue desarrollado en ruby, para tener soporte en los 3 principales SO (Mac OS X, GNU/Linux, Windows 7, 8, 10)
 
-## prerequisitos
+## Prerequisitos
 
 Para los 3 SO se deberá contar con la instalación y correcta configuración de:
 * virtualbox
@@ -44,7 +44,7 @@ En GNU/Linux se hace algo parecido que en Mac OS X, con excepción de las 2 prim
 
   [21f64003]: https://gorails.com/setup "Instalar Ruby"
 
-## dictionary-instancias-merx
+## Dictionary-instancias-merx
 
 Es un archivo json en el cual residen las configuraciones para los restores. La estructura es la siguiente:
 * instancias-merx
@@ -79,7 +79,7 @@ Es un archivo json en el cual residen las configuraciones para los restores. La 
   * **dir_base**
   * **dir**
 
-## ejecución
+## Ejecución
 
 El programa tiene 2 modos de ejecutarse, el primero es por parámetros y el segundo de forma interactiva.
 
@@ -89,7 +89,7 @@ Se puede ejecutar como un script shell sólo tenemos que darle permisos de ejecu
 chmod +x restore.rb
 ```
 
-### parametrizado
+### Parametrizado
 
 ```sh
 ruby restore.rb primeraVez nombreInstancia [tipoRestore, respuestaGit, correrPruebas]
@@ -113,7 +113,7 @@ Este modo tiene las siguientes opciones:
   - Con una respuesta afirmativa "s" se intentará ejecutar las pruebas unitarias de PHP y JS
   - Con una respuesta negativa "n" se omite la ejecución sin embargo nos dará un mensaje de recordatorio por si queremos mas adelante ejecutar dichas pruebas de forma manual.
 
-##### Ejemplos de uso
+##### ejemplos de uso
 
 Queremos restaurar una instancia ondemand del proyecto ruhrpumpen de forma total con los últimos cambios de github de ese proyecto y sin correr prueba unitarias.
 
@@ -129,7 +129,7 @@ ruby restore.rb n ruhrpumpen b
 ./restore.rb n ruhrpumpen b
 ```
 
-### interactivo
+### Interactivo
 
 En esta opción se nos depliega un serie de preguntas en la terminal o consola que nos guian por el proceso.
 
