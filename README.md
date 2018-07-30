@@ -30,10 +30,13 @@ E instalar posiblemente las gems json y colorize
   gem install colorize
 ```
 
-En Mac OS X, se corren las siguientes lineas:
+En Mac OS X, se pude utilizar instalar [Homebrew][989d06d7] y se corren las siguientes lineas:
 
-```sh
-  brew install rbenv ruby-build
+  [989d06d7]: https://brew.sh/ "brew"
+
+```sh  
+  brew install rbenv
+  rbenv install 2.5.1
   which gem
   sudo gem update --system
   sudo gem install json
@@ -59,22 +62,25 @@ Es un archivo json en el cual residen las configuraciones para los restores. La 
     * **db_name** - Nombre de la base de datos (Examinar config.php del backup)
     * **host_elastic** - Url del servidor en donde corre Elastic Search en ondemand | onsite (Examinar config.php del backup)
     * **db_scripts** - Array de instrucciones SQL, si no se especifican no son consideradas.
-    * **dir_backup** - Directorio donde se ubican los backups de la instancia. Por ejemplo: /home/usuario/proyectos/lowes/backups/lastest
+    * **dir_backup** - Directorio donde se ubican los backups de la instancia. Por ejemplo: /home/usuario/merx/proyectos/lowes/backups/lastest
     * **branch** - Rama de github dentro del repositorio de custom_sugarcrm de merx
     * **version** - Versión de Sugar, ejemplo: para la versión 8.0.0 será convertida así 80000.
-    * **dir_packages** - Directorio donde se encuentran los paquetes de personalizaciones. Por ejemplo: /home/usuario/merx/sugarcrm_packages
+    * **dir_packages** - Directorio donde se encuentran los paquetes de personalizaciones. Por ejemplo: /home/usuario/merx/repos/sugarcrm_packages
     * **packages** - Array con los nombres de los paquetes a ser considerados para construirlos e instalarlos en la instancia, si no se especifican no son considerados.
 * vagrant
   * **dir_base** - Directorio donde se encuentra instalado el box de vagrant en nuestro sistema. Por ejemplo: /home/usuario/merx/vagrant/sugar_env/sugar
   * **multiversionSugar** - "false|true" Es una opción para soportar varias versiones de sugar en un mismo box de vagrant.
-* **cliModuleInstall** - Ruta del archivo para instalar paquetes por medio de linea de comandos. Por ejemplo: /home/usuario/Documentos/merx/vagrant-restore/cliModuleInstall.php
+* **cliModuleInstall** - Ruta del archivo para instalar paquetes por medio de linea de comandos. Por ejemplo: /home/usuario/merx/repos/vagrant-restore/cliModuleInstall.php
 * github
   * **user** - Usuario de github
   * **name** - Nombre completo que esta en tu perfil de github
   * **email** - Email con el cual te diste de alta en github
   * local
-    * **dir** - Directorio donde se encontrará una copia local del repositorio custom_sugarcrm de MerxBP. Ejemplo: /home/usuario/merx
+    * **dir** - Directorio donde se encontrará una copia local del repositorio custom_sugarcrm de MerxBP. Ejemplo: /home/usuario/merx/repos
     * **remote** - Repositorio de github. Ejemplo: git@github.com:MerxBusinessPerformance/custom_sugarcrm.git
+  * paquetes
+    * **dir** - Directorio donde se encontrará una copia local del repositorio sugarcrm_packages de MerxBP. Ejemplo: /home/usuario/merx/repos
+    * **remote** - Repositorio de github. Ejemplo: git@github.com:MerxBusinessPerformance/sugarcrm_packages.git
 * nginx - Aún en fase experimental.
   * **dir_base**
   * **dir**

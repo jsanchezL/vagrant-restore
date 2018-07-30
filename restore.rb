@@ -368,6 +368,15 @@ class RestoreInstanciaVagrant
     end
 
   end
+  
+  # Se emplea para saber si tenemos más de una version de sugar en vagrant
+  def multiversionSugar
+    if @@data_hash['vagrant']['multiversionSugar'] == "true"
+      return "#{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/#{@@EsSubVersion}"
+    else
+      return "#{@@data_hash['vagrant']['dir_base']}"
+    end
+  end
 
   def copiarArchivosAVagrant(ruta)
     @@dir_instancia = obtenerRutaInstancia
@@ -387,7 +396,9 @@ class RestoreInstanciaVagrant
       if @@os == "win"
         rutaRestore = rutaRestore.gsub(%r{/}) {'\\'}
         dir_instancia = @@dir_instancia.gsub(%r{/}) {'\\'}
-        system("attrib #{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/#{@@EsSubVersion} /S /D -S -A -R -I")
+        # FIXME probar en windows.
+        dir_v = multiversionSugar
+        system("attrib #{dir_v} /S /D -S -A -R -I")
         system("move /Y #{rutaRestore} #{dir_instancia}")
       else
         FileUtils.cp_r rutaRestore, @@dir_instancia
@@ -459,7 +470,8 @@ class RestoreInstanciaVagrant
   end
 
   def activarVagrant
-    Dir.chdir("#{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/#{@@EsSubVersion}")
+    dir_v = multiversionSugar    
+    Dir.chdir(dir_v)
     if @@os != 'win'
       res = `curl -I -s -L http://localhost:8080 | grep 'HTTP/1.1'`
       if !res.include? "200"
@@ -552,16 +564,15 @@ class RestoreInstanciaVagrant
      else       
        system("zip -r #{package} . -x .DS_Store *.md") 
      end
-    end
-      
+    end      
   end
 
   def instalarPaquetes
     if !@@paramsInstancia['packages'].empty?
       puts " "
-      puts "==> Instalando paquetes...".green
-      
+      puts "==> Instalando paquetes...".green      
       copyCliModuleInstall
+      gitLocalDirFromRemote('paquetes')
       createPackages
       Dir.chdir(@@dir_instancia)
       
@@ -726,16 +737,15 @@ class RestoreInstanciaVagrant
   end
 
   # Checar el comportamiento de esta modificacion
-
-  def gitLocalDirFromRemote
-    @@gitMERX = @@data_hash['github']['local']['remote']
+  def gitLocalDirFromRemote(localOrPaquetes)
+    @@gitMERX = @@data_hash['github'][localOrPaquetes]['remote']
     dirRepoMerx = @@gitMERX.split('/').last
     dirRepoMerx = dirRepoMerx.split('.').first
-    gitLocal = File.join(@@data_hash['github']['local']['dir'],dirRepoMerx)
+    gitLocal = File.join(@@data_hash['github'][localOrPaquetes]['dir'],dirRepoMerx)
 
     if existe_directorio?(gitLocal)
       puts " "
-      puts "==> Actualizando repositorio local de MerxBP...".green
+      puts "==> Actualizando repositorio #{localOrPaquetes} de MerxBP...".green
       Dir.chdir(gitLocal)
       system("git fetch origin")
       res = `git branch`
@@ -748,8 +758,8 @@ class RestoreInstanciaVagrant
       system("git merge origin/#{@@paramsInstancia['branch']}")
     else
       puts " "
-      puts "==> Creando repositorio local de MerxBP...".green
-      Dir.chdir(@@data_hash['github']['local']['dir'])
+      puts "==> Creando repositorio #{localOrPaquetes} de MerxBP...".green
+      Dir.chdir(@@data_hash['github'][localOrPaquetes]['dir'])
       system("git clone #{@@gitMERX}")
       Dir.chdir(gitLocal)
       res = `git branch`
@@ -766,7 +776,7 @@ class RestoreInstanciaVagrant
   def obtenerCambiosDeGit
     puts " "
     puts "==> Obteniendo cambios de Git...".green
-    gitLocal = gitLocalDirFromRemote
+    gitLocal = gitLocalDirFromRemote('local')
 
     Dir.chdir(@@dir_instancia)
 
@@ -807,8 +817,9 @@ class RestoreInstanciaVagrant
   end
 
   def repararInstancia
-    Dir.chdir("#{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/#{@@EsSubVersion}")
-    repair = "#{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/#{@@EsSubVersion}/#{@@nombreInstancia}.merxbp.loc/repair.php"
+    dir_v = multiversionSugar
+    Dir.chdir(dir_v)
+    repair = "#{dir_v}/#{@@nombreInstancia}.merxbp.loc/repair.php"
     if File.exist?(repair)
       puts " "
       puts "==> Reparando la instancia...".green
@@ -903,7 +914,11 @@ class RestoreInstanciaVagrant
   end
 
   def obtenerRutaInstancia
-    @@data_hash['vagrant']['dir_base'] + @@EsSugarV.to_s + "/" + @@EsSubVersion.to_s + "/" + @@nombreInstancia + ".merxbp.loc"
+    if @@data_hash['vagrant']['multiversionSugar'] == "true"
+      @@data_hash['vagrant']['dir_base'] + @@EsSugarV.to_s + "/" + @@EsSubVersion.to_s + "/" + @@nombreInstancia + ".merxbp.loc"
+    else
+      @@data_hash['vagrant']['dir_base'] + "/" + @@nombreInstancia + ".merxbp.loc"
+    end
   end
 
   def existe_directorio?(directory)
