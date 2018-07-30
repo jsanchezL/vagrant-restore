@@ -164,7 +164,11 @@ class RestoreInstanciaVagrant
   end
 
   def instalarVagrantBoxEnEquipo
-    Dir.chdir("#{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/")
+    if @@data_hash['vagrant']['multiversionSugar'] == "true"
+      Dir.chdir("#{@@data_hash['vagrant']['dir_base']}#{@@EsSugarV}/")
+    else
+      Dir.chdir("#{@@data_hash['vagrant']['dir_base']}/")
+    end
     puts " "
     puts "==> Instalando Vagrant Box...".green
     case @@EsSubVersion
