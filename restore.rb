@@ -314,7 +314,7 @@ class RestoreInstanciaVagrant
     if existe_directorio?(sugardir)
 
       cache = File.join(sugardir, "cache")
-      upload = File.join(sugardir, "upload")      
+      upload = File.join(sugardir, "upload")
       limpiarDirectorio(cache)
       limpiarDirectorio(upload)
 
@@ -372,7 +372,7 @@ class RestoreInstanciaVagrant
     end
 
   end
-  
+
   # Se emplea para saber si tenemos más de una version de sugar en vagrant
   def multiversionSugar
     if @@data_hash['vagrant']['multiversionSugar'] == "true"
@@ -393,7 +393,7 @@ class RestoreInstanciaVagrant
     restore = Dir.glob(restore).select{ |file| !File.file?(file) }[0]
     FileUtils.cd(restore)
 
-    if @@paramsInstancia['esOndemand']
+    if @@paramsInstancia['esOndemand'].to_bool
       rutaRestore = Dir.glob(File.join(restore,"sugar*")).select{ |file| !File.file?(file) }[0]
       archivoSql = File.join(restore,"*.sql")
 
@@ -455,7 +455,7 @@ class RestoreInstanciaVagrant
     system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_user_name']}/root/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
     system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_password']}/root/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
     system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
-    if @@paramsInstancia['esOndemand']
+    if @@paramsInstancia['esOndemand'].to_bool
       system("vagrant ssh -c 'sed -i \"s/#{@@nombreInstancia}.sugarondemand.com/#{@@nombreInstancia}.merxbp.loc/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
       system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}*/*#{@@paramsInstancia['edicion']}.sql'")
       system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}*/*triggers.sql'")
@@ -474,7 +474,7 @@ class RestoreInstanciaVagrant
   end
 
   def activarVagrant
-    dir_v = multiversionSugar    
+    dir_v = multiversionSugar
     Dir.chdir(dir_v)
     if @@os != 'win'
       res = `curl -I -s -L http://localhost:8080 | grep 'HTTP/1.1'`
@@ -497,7 +497,7 @@ class RestoreInstanciaVagrant
     puts " "
     puts "==> Restaurando bases de datos...".green
     system("vagrant ssh -c \"mysql -u root -proot -e 'drop database IF EXISTS #{@@nombreInstancia}; create database #{@@nombreInstancia}; show databases;'\"")
-    if @@paramsInstancia['esOndemand']
+    if @@paramsInstancia['esOndemand'].to_bool
       @s = Spinner.new()
       while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia} < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}.sql\"") do
         sleep 0.5
@@ -514,7 +514,7 @@ class RestoreInstanciaVagrant
     puts ""
     puts "===> Origin copia de respaldo de la bd".green
     system("vagrant ssh -c \"mysql -u root -proot -e 'drop database IF EXISTS #{@@nombreInstancia}_origin; create database #{@@nombreInstancia}_origin; show databases;'\"")
-    if @@paramsInstancia['esOndemand']
+    if @@paramsInstancia['esOndemand'].to_bool
       @s = Spinner.new()
       while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}.sql\"") do
         sleep 0.5
@@ -554,52 +554,52 @@ class RestoreInstanciaVagrant
       FileUtils.cp @@data_hash['cliModuleInstall'], @@dir_instancia
     end
   end
-  
+
   def createPackages
     # En linux zip -r $PWD/PI_EmailTemplatesAforeXXI.zip . -x .DS_Store *.md
     paquetes = @@paramsInstancia['packages']
-    paquetes.each_index do |p| 
-     dir_package = File.join(@@paramsInstancia['dir_packages'], paquetes[p])     
+    paquetes.each_index do |p|
+     dir_package = File.join(@@paramsInstancia['dir_packages'], paquetes[p])
      Dir.chdir(dir_package)
-     package = File.join(dir_package, "#{paquetes[p]}.zip")     
+     package = File.join(dir_package, "#{paquetes[p]}.zip")
      if @@os == "win"
        package = package.gsub(%r{/}) {'\\'}
        # TODO: How to zip en windows
-     else       
-       system("zip -r #{package} . -x .DS_Store *.md") 
+     else
+       system("zip -r #{package} . -x .DS_Store *.md")
      end
-    end      
+    end
   end
 
   def instalarPaquetes
     if !@@paramsInstancia['packages'].empty?
       puts " "
-      puts "==> Instalando paquetes...".green      
+      puts "==> Instalando paquetes...".green
       copyCliModuleInstall
       gitLocalDirFromRemote('paquetes')
       createPackages
       Dir.chdir(@@dir_instancia)
-      
-      if File.exist?(File.join(@@dir_instancia,"cliModuleInstall.php"))        
-      
+
+      if File.exist?(File.join(@@dir_instancia,"cliModuleInstall.php"))
+
         upload_dir = File.join(@@dir_instancia,"upload")
         upgrades = File.join(upload_dir, "upgrades")
-        dir_paquetes = File.join(upgrades, "module")   
-      
+        dir_paquetes = File.join(upgrades, "module")
+
         if @@os == "win"
-          Dir.mkdir(upgrades.gsub(%r{/}) {'\\'})            
-          Dir.mkdir(dir_paquetes.gsub(%r{/}) {'\\'}) 
+          Dir.mkdir(upgrades.gsub(%r{/}) {'\\'})
+          Dir.mkdir(dir_paquetes.gsub(%r{/}) {'\\'})
         else
           system("mkdir #{upgrades}")
-          system("mkdir #{dir_paquetes}") 
+          system("mkdir #{dir_paquetes}")
         end
-      
+
         paquetes = @@paramsInstancia['packages']
         paquetes.each_index do |i|
           package = File.join(File.join(@@paramsInstancia['dir_packages'], paquetes[i]), "#{paquetes[i]}.zip")
-          if @@os == "win"                                    
+          if @@os == "win"
             FileUtils.cp package.gsub(%r{/}) {'\\'}, dir_paquetes.gsub(%r{/}) {'\\'}
-          else                                          
+          else
             FileUtils.cp package, dir_paquetes
           end
           name_paquete = File.basename(package);
@@ -842,14 +842,15 @@ class RestoreInstanciaVagrant
   def ejecutarPruebas
     puts " "
     puts "==> Ejecutando las pruebas PHP...".green
-    if @@EsSubVersion < 10
+    if @@EsSubVersion < 10 and @@EsSugarV == 7
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/tests; ../vendor/phpunit/phpunit/phpunit\"")
     else
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/tests/{old}; ../../vendor/bin/phpunit\"")
     end
+    # TODO:: VER ESTO PORQUE NO JALA CHIDO
     puts " "
     puts "==> Ejecutando las pruebas JS...".green
-    if @@EsSubVersion < 8
+    if @@EsSubVersion < 8 and @@EsSugarV == 7
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/tests; grunt karma:ci\"")
     elsif @@EsSubVersion >= 8 && @@EsSubVersion < 10
       system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/node_modules/gulp/bin/gulp.js karma --ci\"")
