@@ -393,7 +393,7 @@ class RestoreInstanciaVagrant
     restore = Dir.glob(restore).select{ |file| !File.file?(file) }[0]
     FileUtils.cd(restore)
 
-    if @@paramsInstancia['esOndemand'].to_bool
+    if @@paramsInstancia['esOndemand']
       rutaRestore = Dir.glob(File.join(restore,"sugar*")).select{ |file| !File.file?(file) }[0]
       archivoSql = File.join(restore,"*.sql")
 
@@ -455,7 +455,7 @@ class RestoreInstanciaVagrant
     system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_user_name']}/root/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
     system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_password']}/root/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
     system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
-    if @@paramsInstancia['esOndemand'].to_bool
+    if @@paramsInstancia['esOndemand']
       system("vagrant ssh -c 'sed -i \"s/#{@@nombreInstancia}.sugarondemand.com/#{@@nombreInstancia}.merxbp.loc/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
       system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}*/*#{@@paramsInstancia['edicion']}.sql'")
       system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}*/*triggers.sql'")
@@ -497,7 +497,7 @@ class RestoreInstanciaVagrant
     puts " "
     puts "==> Restaurando bases de datos...".green
     system("vagrant ssh -c \"mysql -u root -proot -e 'drop database IF EXISTS #{@@nombreInstancia}; create database #{@@nombreInstancia}; show databases;'\"")
-    if @@paramsInstancia['esOndemand'].to_bool
+    if @@paramsInstancia['esOndemand']
       @s = Spinner.new()
       while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia} < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}.sql\"") do
         sleep 0.5
@@ -514,7 +514,7 @@ class RestoreInstanciaVagrant
     puts ""
     puts "===> Origin copia de respaldo de la bd".green
     system("vagrant ssh -c \"mysql -u root -proot -e 'drop database IF EXISTS #{@@nombreInstancia}_origin; create database #{@@nombreInstancia}_origin; show databases;'\"")
-    if @@paramsInstancia['esOndemand'].to_bool
+    if @@paramsInstancia['esOndemand']
       @s = Spinner.new()
       while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}.sql\"") do
         sleep 0.5
