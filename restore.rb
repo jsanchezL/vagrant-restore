@@ -562,11 +562,13 @@ class RestoreInstanciaVagrant
      dir_package = File.join(@@paramsInstancia['dir_packages'], paquetes[p])
      Dir.chdir(dir_package)
      package = File.join(dir_package, "#{paquetes[p]}.zip")
+     puts ""
+     puts "========>Creando paquete #{paquetes[p]}".green
      if @@os == "win"
        package = package.gsub(%r{/}) {'\\'}
        # TODO: How to zip en windows
      else
-       system("zip -r #{package} . -x .DS_Store *.md")
+       system("zip -r #{package} . -x .DS_Store *.md *.sonarlint* *.directory*")
      end
     end
   end
@@ -574,7 +576,7 @@ class RestoreInstanciaVagrant
   def instalarPaquetes
     if !@@paramsInstancia['packages'].empty?
       puts " "
-      puts "==> Instalando paquetes...".green
+      puts "==> Instalación de paquetes...".green
       copyCliModuleInstall
       gitLocalDirFromRemote('paquetes')
       createPackages
@@ -593,7 +595,6 @@ class RestoreInstanciaVagrant
           system("mkdir #{upgrades}")
           system("mkdir #{dir_paquetes}")
         end
-
         paquetes = @@paramsInstancia['packages']
         paquetes.each_index do |i|
           package = File.join(File.join(@@paramsInstancia['dir_packages'], paquetes[i]), "#{paquetes[i]}.zip")
@@ -604,6 +605,8 @@ class RestoreInstanciaVagrant
           end
           name_paquete = File.basename(package);
           @s = Spinner.new()
+          puts ""
+          puts "========>Instalando paquete #{paquetes[i]}".green
           while !system("vagrant ssh -c\"cd /vagrant/#{@@nombreInstancia}.merxbp.loc;php cliModuleInstall.php -i /vagrant/#{@@nombreInstancia}.merxbp.loc -z /vagrant/#{@@nombreInstancia}.merxbp.loc/upload/upgrades/module/#{name_paquete}\"") do
             sleep 0.5
           end
@@ -814,6 +817,7 @@ class RestoreInstanciaVagrant
     # system("git clean -i")
     # system("git pull local #{@@paramsInstancia['branch']} --allow-unrelated-histories")
     #añadiendo cosas utiles para atom
+    
     system("git config atom.open-on-github.remote origin")
     system("git config atom.open-on-github.branch #{@@paramsInstancia['branch']}")
     system("git config --global user.name \"#{@@data_hash["github"]["name"]}\"")
