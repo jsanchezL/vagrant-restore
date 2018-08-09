@@ -30,6 +30,10 @@
 		"local":{
 			"dir":"",
 			"remote":""
+		},
+		"paquetes":{
+			"dir":"",
+			"remote":""
 		}
 	},
 	"nginx":{
