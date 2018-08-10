@@ -820,8 +820,8 @@ class RestoreInstanciaVagrant
     
     system("git config atom.open-on-github.remote origin")
     system("git config atom.open-on-github.branch #{@@paramsInstancia['branch']}")
-    system("git config --global user.name \"#{@@data_hash["github"]["name"]}\"")
-    system("git config --global user.email #{@@data_hash["github"]["email"]}")
+    system("git config user.name \"#{@@data_hash["github"]["name"]}\"")
+    system("git config user.email #{@@data_hash["github"]["email"]}")
   end
 
   def repararInstancia
