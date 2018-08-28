@@ -24,7 +24,6 @@ class RestoreInstanciaVagrant
   @@dir_dummyFiles = "dummy_restore"
 
   def initialize(origenParams, primeraVez, nombreInstancia, tipoRestore, respuestaGit, correrPruebas)
-    os
     @@dir_scriptrb = Dir.pwd
     @@origenParams = origenParams
     @@primeraVez = primeraVez
@@ -511,22 +510,24 @@ class RestoreInstanciaVagrant
       end
       @s.stop("done...")
     end
-    puts ""
-    puts "===> Origin copia de respaldo de la bd".green
-    system("vagrant ssh -c \"mysql -u root -proot -e 'drop database IF EXISTS #{@@nombreInstancia}_origin; create database #{@@nombreInstancia}_origin; show databases;'\"")
-    if @@paramsInstancia['esOndemand']
-      @s = Spinner.new()
-      while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}.sql\"") do
-        sleep 0.5
+    if !@@paramsInstancia['needBackBD']
+      puts ""
+      puts "===> Origin copia de respaldo de la bd".green
+      system("vagrant ssh -c \"mysql -u root -proot -e 'drop database IF EXISTS #{@@nombreInstancia}_origin; create database #{@@nombreInstancia}_origin; show databases;'\"")
+      if @@paramsInstancia['esOndemand']
+        @s = Spinner.new()
+        while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}.sql\"") do
+          sleep 0.5
+        end
+        @s.stop("done...")
+        system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}_triggers.sql\"")
+      else
+        @s = Spinner.new()
+        while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*.sql\"") do
+          sleep 0.5
+        end
+        @s.stop("done...")
       end
-      @s.stop("done...")
-      system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*#{@@paramsInstancia['edicion']}_triggers.sql\"")
-    else
-      @s = Spinner.new()
-      while !system("vagrant ssh -c \"mysql -u root -proot #{@@nombreInstancia}_origin < /vagrant/#{@@nombreInstancia}.merxbp.loc/*.sql\"") do
-        sleep 0.5
-      end
-      @s.stop("done...")
     end
   end
 
@@ -817,7 +818,7 @@ class RestoreInstanciaVagrant
     # system("git clean -i")
     # system("git pull local #{@@paramsInstancia['branch']} --allow-unrelated-histories")
     #añadiendo cosas utiles para atom
-    
+
     system("git config atom.open-on-github.remote origin")
     system("git config atom.open-on-github.branch #{@@paramsInstancia['branch']}")
     system("git config user.name \"#{@@data_hash["github"]["name"]}\"")

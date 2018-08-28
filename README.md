@@ -54,6 +54,7 @@ Es un archivo json en el cual residen las configuraciones para los restores. La 
   * **nombreInstancia** - Nombre de la instancia. Por ejemplo: "lowes"
     * **alias** - Alias con el cual podemos desplegarla la instancia. Por ejemplo: "lowesqa"
     * **esOndemand** - "true|false"
+    * **needBackBD** - "true|false" Se necesita copia de seguridad de la Base de Datos
     * **urlOnSite** - Si la instancia no es ondemand se especifica la url a buscar dentro de los archivos config.php y .htaccess
     * **edicion** - "ent|pro"
     * **db_host_name** - Url del servidor en donde esta la base de datos en ondemand | onsite (Examinar config.php del backup)

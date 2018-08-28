@@ -3,6 +3,7 @@
 		"nombreInstancia": {
 			"alias":"",
 			"esOndemand":"",
+			"needBackBD": "",
 			"urlOnSite":"",
       "edicion":"",
 			"db_host_name":"",
