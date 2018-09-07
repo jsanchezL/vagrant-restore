@@ -24,6 +24,7 @@ class RestoreInstanciaVagrant
   @@dir_dummyFiles = "dummy_restore"
 
   def initialize(origenParams, primeraVez, nombreInstancia, tipoRestore, respuestaGit, correrPruebas)
+    os
     @@dir_scriptrb = Dir.pwd
     @@origenParams = origenParams
     @@primeraVez = primeraVez
@@ -225,9 +226,8 @@ class RestoreInstanciaVagrant
     end
   end
 
-  def extraerInstanciaNueva(nuevoIntento=false)
+  def extraerInstanciaNueva(nuevoIntento=false)    
     rutaBackup = obtenerRutaBackup
-
     if !nuevoIntento
       puts " "
       puts "==> Extrayendo el restore...".green
@@ -238,7 +238,6 @@ class RestoreInstanciaVagrant
 
     if existe_directorio?(rutaBackup)
       Dir.chdir(rutaBackup)
-
       if !esElUltimoBackup(rutaBackup)
         if !@@origenParams
           puts "====> ¡Se detecto que tienes más de un backup en ese directorio! - Por favor selecciona el más reciente:".yellow
@@ -255,8 +254,8 @@ class RestoreInstanciaVagrant
         nombreBackup = "*.tar.gz"
       end
 
-      if @@os == "linux" || @@os == "mac"
-        limpiarDirectorio(File.join(rutaBackup,@@nombreAliasInstancia+'*'))
+      if @@os == "linux" || @@os == "mac"        
+        limpiarDirectorio(File.join(rutaBackup,@@nombreAliasInstancia+'*'))        
         result = system("tar -zxf #{nombreBackup}")
       elsif @@os == "win"
         nombreBackupTar = "*.tar"
@@ -268,7 +267,7 @@ class RestoreInstanciaVagrant
         result = system("7z x -aoa #{nombreBackupTar}")
       end
 
-      if !result
+      if !result && @@os == "win"
         puts "====> ¡Error al momento de extraer el restore!".red
         exit(!result)
       end
@@ -300,16 +299,16 @@ class RestoreInstanciaVagrant
     puts " "
     puts "==> Limpiando la instancia...".green
 
-    restore = File.join(ruta,@@nombreAliasInstancia+'*')
-
+    restore = File.join(ruta,@@nombreAliasInstancia+'*')    
+    
     if @@os == "win"
       restore = restore.gsub(%r{\\}) {'/'}
     end
 
     restore = Dir.glob(restore).select{ |file| !File.file?(file) }[0]
+     
     FileUtils.cd(restore)
     sugardir = Dir.glob(File.join(restore,'sugar*')).select{ |file| !File.file?(file) }[0]
-
     if existe_directorio?(sugardir)
 
       cache = File.join(sugardir, "cache")
