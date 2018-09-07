@@ -756,12 +756,22 @@ class RestoreInstanciaVagrant
       Dir.chdir(gitLocal)
       system("git fetch origin")
       res = `git branch`
-      exp = /\*\s#{@@paramsInstancia['branch']}/
-      if !exp.match(res)
+      exp = /#{@@paramsInstancia['branch']}/      
+      ar = res.to_s.split("\n")
+      
+      flag = false
+      ar.each do |i|
+        if exp.match(i.to_s.strip)
+          flag = true          
+        end
+      end
+      
+      if !flag        
         system("git checkout -b #{@@paramsInstancia['branch']} origin/#{@@paramsInstancia['branch']}")
       else
         system("git checkout #{@@paramsInstancia['branch']}")
       end
+      
       system("git merge origin/#{@@paramsInstancia['branch']}")
     else
       puts " "
@@ -770,8 +780,17 @@ class RestoreInstanciaVagrant
       system("git clone #{@@gitMERX}")
       Dir.chdir(gitLocal)
       res = `git branch`
-      exp = /\*\s#{@@paramsInstancia['branch']}/
-      if !exp.match(res)
+      exp = /#{@@paramsInstancia['branch']}/      
+      ar = res.to_s.split("\n")
+      
+      flag = false
+      ar.each do |i|
+        if exp.match(i.to_s.strip)
+          flag = true          
+        end
+      end
+      
+      if !flag 
         system("git checkout -b #{@@paramsInstancia['branch']} origin/#{@@paramsInstancia['branch']}")
       else
         system("git checkout #{@@paramsInstancia['branch']}")
