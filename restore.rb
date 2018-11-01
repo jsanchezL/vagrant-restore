@@ -226,7 +226,7 @@ class RestoreInstanciaVagrant
     end
   end
 
-  def extraerInstanciaNueva(nuevoIntento=false)    
+  def extraerInstanciaNueva(nuevoIntento=false)
     rutaBackup = obtenerRutaBackup
     if !nuevoIntento
       puts " "
@@ -254,8 +254,8 @@ class RestoreInstanciaVagrant
         nombreBackup = "*.tar.gz"
       end
 
-      if @@os == "linux" || @@os == "mac"        
-        limpiarDirectorio(File.join(rutaBackup,@@nombreAliasInstancia+'*'))        
+      if @@os == "linux" || @@os == "mac"
+        limpiarDirectorio(File.join(rutaBackup,@@nombreAliasInstancia+'*'))
         result = system("tar -zxf #{nombreBackup}")
       elsif @@os == "win"
         nombreBackupTar = "*.tar"
@@ -299,14 +299,14 @@ class RestoreInstanciaVagrant
     puts " "
     puts "==> Limpiando la instancia...".green
 
-    restore = File.join(ruta,@@nombreAliasInstancia+'*')    
-    
+    restore = File.join(ruta,@@nombreAliasInstancia+'*')
+    # puts "1 #{restore}"
     if @@os == "win"
       restore = restore.gsub(%r{\\}) {'/'}
     end
 
     restore = Dir.glob(restore).select{ |file| !File.file?(file) }[0]
-     
+    # puts restore
     FileUtils.cd(restore)
     sugardir = Dir.glob(File.join(restore,'sugar*')).select{ |file| !File.file?(file) }[0]
     if existe_directorio?(sugardir)
@@ -666,9 +666,7 @@ class RestoreInstanciaVagrant
       puts " "
       puts "==> Instalando composer y #{jsTester}...".green
       t1 = Thread.new{
-        if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
-          composer_json = "vagrant ssh -c 'sed -i \"s/satis.sugardev.team/packagist.org/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/composer.json'"
-          system(composer_json)
+        if @EsSugarV == 8
           system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"")
           system("vagrant ssh -c \"sudo service apache2 restart\"")
         end
@@ -688,9 +686,7 @@ class RestoreInstanciaVagrant
     elsif installComposer
       puts " "
       puts "==> Instalando composer...".green
-      if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
-        composer_json = "vagrant ssh -c 'sed -i \"s/satis.sugardev.team/packagist.org/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/composer.json'"
-        system(composer_json)
+      if @EsSugarV == 8
         system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"")
         system("vagrant ssh -c \"sudo service apache2 restart\"")
       end
@@ -718,9 +714,7 @@ class RestoreInstanciaVagrant
     if installComposer && installJsTest
       puts " "
       puts "====> ¡Recuerda antes de correr tus pruebas, instala composer y #{jsTester}, desde el directorio vagrant con las siguientes lineas! : ".red
-      if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
-        composer_json = "vagrant ssh -c 'sed -i \"s/satis.sugardev.team/packagist.org/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/composer.json'"
-        puts "========> #{composer_json}".red
+      if @EsSugarV == 8
         puts "========> vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"".red
         puts "========> vagrant ssh -c \"sudo service apache2 restart\"".red
       end
@@ -729,9 +723,7 @@ class RestoreInstanciaVagrant
     elsif installComposer
       puts " "
       puts "====> ¡Recuerda antes de correr tus pruebas, instala composer, desde el directorio vagrant con la siguiente linea! : ".red
-      if @@EsSubVersion >= 10 and (@@EsSugarV == 7 or @EsSugarV == 8)
-        composer_json = "vagrant ssh -c 'sed -i \"s/satis.sugardev.team/packagist.org/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/composer.json'"
-        puts "========> #{composer_json}".red
+      if @EsSugarV == 8
         puts "========> vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"".red
         puts "========> vagrant ssh -c \"sudo service apache2 restart\"".red
       end
@@ -756,22 +748,22 @@ class RestoreInstanciaVagrant
       Dir.chdir(gitLocal)
       system("git fetch origin")
       res = `git branch`
-      exp = /#{@@paramsInstancia['branch']}/      
+      exp = /#{@@paramsInstancia['branch']}/
       ar = res.to_s.split("\n")
-      
+
       flag = false
       ar.each do |i|
         if exp.match(i.to_s.strip)
-          flag = true          
+          flag = true
         end
       end
-      
-      if !flag        
+
+      if !flag
         system("git checkout -b #{@@paramsInstancia['branch']} origin/#{@@paramsInstancia['branch']}")
       else
         system("git checkout #{@@paramsInstancia['branch']}")
       end
-      
+
       system("git merge origin/#{@@paramsInstancia['branch']}")
     else
       puts " "
@@ -780,17 +772,17 @@ class RestoreInstanciaVagrant
       system("git clone #{@@gitMERX}")
       Dir.chdir(gitLocal)
       res = `git branch`
-      exp = /#{@@paramsInstancia['branch']}/      
+      exp = /#{@@paramsInstancia['branch']}/
       ar = res.to_s.split("\n")
-      
+
       flag = false
       ar.each do |i|
         if exp.match(i.to_s.strip)
-          flag = true          
+          flag = true
         end
       end
-      
-      if !flag 
+
+      if !flag
         system("git checkout -b #{@@paramsInstancia['branch']} origin/#{@@paramsInstancia['branch']}")
       else
         system("git checkout #{@@paramsInstancia['branch']}")
