@@ -7,20 +7,25 @@ require 'fileutils'
 require 'colorize'
 
 class ConstruyeT
-  @@dir = "/home/jsanchez/Documentos/merx/jsanchezL"
-  @@dir_packages = "/home/jsanchez/Documentos/merx/jsanchezL/sugarcrm_packages"
-  @@gitMERX = "git@github.com:MerxBusinessPerformance/sugarcrm_packages.git"
-  @@dir_packages_build = "/home/jsanchez/Documentos/merx/jsanchezL/builds"
-  @@diccionario = "Merxfile.json"
+  @@dir = ""
+  @@dir_packages = ""
+  @@gitMERX = ""
+  @@dir_packages_build = ""
+  @@diccionario = ""
   @@instancia = nil
   @@dir_scriptrb = nil
+  @@os = nil
 
   def initialize(instancia,git)
+    os
     @@instancia = instancia
     if git.to_s == 'S'
       gitLocalDirFromRemote
     end
     @@dir_scriptrb = Dir.pwd
+    if @@os == "win" 
+      @@dir_scriptrb = @@dir_scriptrb.gsub(%r{/}) {'\\'}
+    end 
     file = File.read(File.join(@@dir_packages, "#{@@diccionario}"))
     data_hash = JSON.parse(file)
     dependencies = data_hash["dependencies"]
@@ -29,11 +34,19 @@ class ConstruyeT
     puts "==> Creación de paquetes...".green
     dependencies.each do |k,v|
       dir_package = File.join(@@dir_packages, k)
+      if @@os == "win"
+        dir_package = dir_package.gsub(%r{/}) {'\\'}
+      end    
       Dir.chdir(dir_package)
-      package = File.join(dir_package, "#{k}.zip")
+      package = File.join(dir_package, "#{k}.zip")      
       puts ""
       puts "====>Creando paquete #{k}".green
-      system("zip -r #{package} . -x .DS_Store *.md *.sonarlint* *.directory*")
+      if @@os == "win"        
+        package = package.gsub(%r{/}) {'\\'}                
+        system("7z a -tzip #{package} -xr!\".DS_Store\" -x!\"*.sonarlint*\" -x!\"*.directory*\" -x!\"*.md\" -x!\"*.zip\"")
+      else
+        system("zip -r #{package} . -x .DS_Store *.md *.sonarlint* *.directory* *.zip")
+      end
       FileUtils.cp File.join(dir_package, "#{k}.zip"), File.join(@@dir_packages_build,@@instancia)
     end
     puts ""
@@ -89,6 +102,20 @@ class ConstruyeT
   def existe_archivo?(file)
     File.file?(file)
   end
+
+    #Investiga que plataforma estamos utilizando
+    def os
+      if (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
+        @@os = "win"
+      elsif RUBY_PLATFORM =~ /linux/
+        @@os = "linux"
+      elsif (/darwin/ =~ RUBY_PLATFORM) != nil
+        @@os = "mac"
+      else
+        puts "====> Estamos corriendo sobre un OS desconocido, solo funcionamos por el momento en Windows, Mac y Linux".red
+        exit(true)
+      end
+    end
 
 end
 

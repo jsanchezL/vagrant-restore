@@ -560,15 +560,18 @@ class RestoreInstanciaVagrant
     paquetes = @@paramsInstancia['packages']
     paquetes.each_index do |p|
      dir_package = File.join(@@paramsInstancia['dir_packages'], paquetes[p])
+     if @@os == "win"
+      dir_package = dir_package.gsub(%r{/}) {'\\'}
+     end
      Dir.chdir(dir_package)
      package = File.join(dir_package, "#{paquetes[p]}.zip")
      puts ""
      puts "========>Creando paquete #{paquetes[p]}".green
      if @@os == "win"
-       package = package.gsub(%r{/}) {'\\'}
-       # TODO: How to zip en windows
+        package = package.gsub(%r{/}) {'\\'}       
+        system("7z a -tzip #{package} -xr!\".DS_Store\" -x!\"*.sonarlint*\" -x!\"*.directory*\" -x!\"*.md\" -x!\"*.zip\"")
      else
-       system("zip -r #{package} . -x .DS_Store *.md *.sonarlint* *.directory*")
+      system("zip -r #{package} . -x .DS_Store *.md *.sonarlint* *.directory* *.zip")
      end
     end
   end
