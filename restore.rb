@@ -461,7 +461,7 @@ class RestoreInstanciaVagrant
       system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['urlOnSite']}/#{@@nombreInstancia}.merxbp.loc/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
       system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['db_name']}/#{@@nombreInstancia}/g\" /vagrant/#{@@nombreInstancia}*/*.sql'")
     end
-    system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['host_elastic']}/localhost/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
+    # system("vagrant ssh -c 'sed -i \"s/#{@@paramsInstancia['host_elastic']}/vpc-merxbpdeves01-ng3y7dlvmcjohbzulujsd5h2wu.us-west-1.es.amazonaws.com/g\" /vagrant/#{@@nombreInstancia}.merxbp.loc/config.php'")
 
     if @@os == 'win'
       httacces = "vagrant ssh -c \"sed -i 's/RewriteBase "+'\//RewriteBase \/sugar\/'+"#{@@nombreInstancia}.merxbp.loc"+'\//g\''+" /vagrant/#{@@nombreInstancia}.merxbp.loc/.htaccess\""
@@ -574,6 +574,30 @@ class RestoreInstanciaVagrant
   end
 
   def instalarPaquetes
+    puts ""
+    puts "======> ¡Instalado composer!".green
+    puts ""
+    system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock;rm -r vendor/beberlei/*;rm -r vendor/doctrine/*;rm -r vendor/guzzlehttp/*;rm -r vendor/paragonie/*;rm -r vendor/react/*;rm -r vendor/spomky-labs/*;rm -r vendor/symfony/*;rm -r vendor/twig/*;\"")
+    system("vagrant ssh -c \"sudo service apache2 restart\"")
+    @s = Spinner.new()
+    while !system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/vendor/psr; wget https://github.com/php-fig/cache/archive/master.zip;\"")
+      sleep 0.5
+    end
+    @s.stop("done...")
+    @s = Spinner.new()          
+    while !system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/vendor/psr; unzip master.zip;\"")
+      sleep 0.5
+    end
+    @s.stop("done...")
+    system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/vendor/psr; rm -r cache; mv cache-master cache;\"") 
+    system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc/vendor/psr; rm master.zip; \"")
+    system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install\"")
+    @s = Spinner.new()
+    while !system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; php repair.php\"") do
+      sleep 0.5
+    end
+    @s.stop("done...")   
+
     if !@@paramsInstancia['packages'].empty?
       puts " "
       puts "==> Instalación de paquetes...".green
@@ -668,6 +692,7 @@ class RestoreInstanciaVagrant
       t1 = Thread.new{
         if @EsSugarV == 8
           system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm composer.lock\"")
+          system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; rm -r vendor/beberlei/*;rm -r vendor/doctrine/*;rm -r vendor/guzzlehttp/*;rm -r vendor/paragonie/*;rm -r vendor/react/*;rm -r vendor/spomky-labs/*;rm -r vendor/symfony/*;rm -r vendor/twig/*;\"")
           system("vagrant ssh -c \"sudo service apache2 restart\"")
         end
         system("vagrant ssh -c \"cd /vagrant/#{@@nombreInstancia}.merxbp.loc; composer install\"")
