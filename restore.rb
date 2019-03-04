@@ -509,7 +509,7 @@ class RestoreInstanciaVagrant
       end
       @s.stop("done...")
     end
-    if !@@paramsInstancia['needBackBD']
+    if !@@paramsInstancia['needBackBD'] == "true"
       puts ""
       puts "===> Origin copia de respaldo de la bd".green
       system("vagrant ssh -c \"mysql -u root -proot -e 'drop database IF EXISTS #{@@nombreInstancia}_origin; create database #{@@nombreInstancia}_origin; show databases;'\"")
