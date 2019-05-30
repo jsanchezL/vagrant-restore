@@ -49,21 +49,10 @@ class RestoreInstanciaVagrant
         @@nombreAliasInstancia = @@paramsInstancia['alias']
       end
 
-      if @@paramsInstancia['version'].to_i < 7710
-        @@EsSugarV = 7
-        @@EsSubVersion = 7
-      elsif @@paramsInstancia['version'].to_i < 7900
-        @@EsSugarV = 7
-        @@EsSubVersion = 8
-      elsif @@paramsInstancia['version'].to_i >= 7900 and @@paramsInstancia['version'].to_i < 71000
-        @@EsSugarV = 7
-        @@EsSubVersion = 9
-      elsif @@paramsInstancia['version'].to_i >= 71000 and @@paramsInstancia['version'].to_i < 71200
-        @@EsSugarV = 7
-        @@EsSubVersion = 10
-      else
+      # Quitando soporte para versiones anteriores a la 8.0.0
+      if @@paramsInstancia['version'].to_i >= 80000
         @@EsSugarV = 8
-        @@EsSubVersion = 0
+        @@EsSubVersion = 0      
       end
     end
   end
@@ -509,7 +498,7 @@ class RestoreInstanciaVagrant
       end
       @s.stop("done...")
     end
-    if !@@paramsInstancia['needBackBD'] == "true"
+    if @@paramsInstancia['needBackBD'] == "true"
       puts ""
       puts "===> Origin copia de respaldo de la bd".green
       system("vagrant ssh -c \"mysql -u root -proot -e 'drop database IF EXISTS #{@@nombreInstancia}_origin; create database #{@@nombreInstancia}_origin; show databases;'\"")
@@ -647,6 +636,12 @@ class RestoreInstanciaVagrant
       end
     end
   end
+
+  # TODO:
+  # sudo chown -R apache:apache *
+  # sudo find . -type d -exec chmod 2770 {} \;
+  # sudo find . -type f -exec chmod 660 {} \;
+  # sudo chmod 770 bin/sugarcrm
 
   def cambiarPermisos
     puts " "
@@ -857,6 +852,7 @@ class RestoreInstanciaVagrant
     # system("git pull local #{@@paramsInstancia['branch']} --allow-unrelated-histories")
     #añadiendo cosas utiles para atom
 
+    # git config --system core.longpaths true   // para windows
     system("git config atom.open-on-github.remote origin")
     system("git config atom.open-on-github.branch #{@@paramsInstancia['branch']}")
     system("git config user.name \"#{@@data_hash["github"]["name"]}\"")
